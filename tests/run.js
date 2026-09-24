@@ -95,7 +95,7 @@ test("big-footprint A: every room can be visited; help and quit work", () => {
   for (const c of [...TOUR, "e"]) { g.type(c); seen.add(g.get("S.room")); }
   assert.equal(seen.size, 12, [...seen].join(","));
   g.type("help");
-  assert.match(g.last(), /^Commands: /);
+  assert.match(g.last(), /^Move: north/);
   g.type("quit");
   assert.equal(g.playing(), false, "quit returns to the start menu");
 });
@@ -107,7 +107,7 @@ test("big-footprint B: critical path wins with 2 secrets and 6 turns to spare (W
   g.type(...ESCAPE, "s");
   assert.equal(g.get("S.count.clock"), 7);
   g.type("d");
-  assert.match(g.last(), /W1/);
+  assert.match(g.last(), /^CLEAN GETAWAY[\s\S]*2\/3\.$/);
   assert.equal(g.get("S.over"), true);
 });
 
@@ -115,15 +115,15 @@ test("big-footprint B: the piano detour wins with all 3 secrets (W2)", () => {
   const g = bigfoot();
   g.type(...TOUR, ...ESCAPE, "e", "play cielito lindo", "w", "s", "d");
   assert.deepEqual(["ledger", "manifest", "photos"].map(i => g.get(`S.loc.${i}`)), ["player", "player", "player"]);
-  assert.match(g.last(), /W2/);
+  assert.match(g.last(), /^CLEAN SWEEP[\s\S]*Perfect run\.$/);
 });
 
 test("big-footprint B: tour rules: the Don blocks other exits and the elevator; free commands cost nothing", () => {
   const g = bigfoot();
   g.type("d");
-  assert.match(g.last(), /ELEVATOR during TOUR/);
+  assert.match(g.last(), /Leaving before dessert/);
   g.type("n", "n");
-  assert.match(g.last(), /TOUR BLOCK/);
+  assert.match(g.last(), /Private, amigo/);
   assert.equal(g.get("S.room"), "foyer");
   const t = g.get("S.count.turns");
   g.type("look", "examine staircase", "inventory", "status", "hint", "help");
@@ -131,18 +131,18 @@ test("big-footprint B: tour rules: the Don blocks other exits and the elevator; 
   g.type("xyzzy");
   assert.equal(g.get("S.count.turns"), t, "unrecognized commands cost nothing");
   g.type("w", "e", "e", "w", "n", "s");
-  assert.match(g.last(), /Q1 PROMPT/, "the Don won't move on until Q1 is answered");
+  assert.match(g.last(), /Sunday gravy\?"$/, "the Don won't move on until Q1 is answered");
   assert.equal(g.get("S.room"), "dining");
 });
 
 test("big-footprint B: three strikes blow your cover (L1); examine is safe", () => {
   const g = bigfoot();
   g.type("n", "w", "examine rifle", "take gold rifle");
-  assert.match(g.last(), /STRIKE 1/);
+  assert.match(g.last(), /smile tightens/);
   g.type("touch rifle");
-  assert.match(g.last(), /STRIKE 2/);
+  assert.match(g.last(), /smile is gone/);
   g.type("e", "e", "w", "n", "say pozole");
-  assert.match(g.last(), /L1 COVER BLOWN/);
+  assert.match(g.last(), /^COVER BLOWN/);
 });
 
 test("big-footprint B: a wrong answer at a checkpoint gets you caught (L2)", () => {
@@ -150,13 +150,13 @@ test("big-footprint B: a wrong answer at a checkpoint gets you caught (L2)", () 
   g.type(...TOUR, "s", "s", "s", "status", "hint");
   assert.equal(g.get("S.over"), false, "free commands are safe at a checkpoint");
   g.type("say jaguar");
-  assert.match(g.last(), /L2 CAUGHT/);
+  assert.match(g.last(), /^CAUGHT/);
 });
 
 test("big-footprint B: second run is not allowed (L2); restart starts over", () => {
   const g = bigfoot();
   g.type(...TOUR, "open jaguar gate", "s", "s", "s", "run", "e", "d", "run");
-  assert.match(g.last(), /L2 CAUGHT/);
+  assert.match(g.last(), /^CAUGHT/);
   g.type("look");
   assert.equal(g.get("S.over"), true);
   g.type("restart");
@@ -168,19 +168,35 @@ test("big-footprint B: the Bigfoot clock runs out (L3) with warnings at 6, 3 and
   const g = bigfoot();
   g.type(...TOUR);
   for (let i = 0; i < 18; i++) g.type("open giraffe gate");
-  for (const n of [6, 3, 1]) assert.ok(g.lines().some(l => l.includes(`${n} TURN`)), `warning at ${n}`);
-  assert.match(g.last(), /L3 BIG FOOTPRINT/);
+  for (const w of ["a thud rattles the chandeliers", "A roar, closer now", "The floor shakes"]) assert.ok(g.lines().some(l => l.includes(w)), w);
+  assert.match(g.last(), /^BIG FOOTPRINT[\s\S]*RESTART to try again/);
 });
 
 test("big-footprint B: puzzles: wrong attempts keep the item; elevator needs 2 secrets", () => {
   const g = bigfoot();
   g.type(...TOUR, "s", "s", "open hippo", "use card on hippo");
-  assert.match(g.last(), /P2 WRONG/);
+  assert.match(g.last(), /grip like a bank vault/);
   assert.equal(g.get("S.loc.card"), "player");
   g.type("s", "run", "e", "d", "say peacocks");
-  assert.match(g.last(), /L2 CAUGHT/, "an unreleased animal is no alibi");
+  assert.match(g.last(), /^CAUGHT/, "an unreleased animal is no alibi");
   const h = bigfoot();
   h.type(...TOUR, "s", "open aviary", "s", "use coin on hippo", "s", "run", "e", "d", "say peacocks", "s", "d");
-  assert.match(h.last(), /ELEVATOR < 2 secrets/);
+  assert.match(h.last(), /empty-handed/);
   assert.equal(h.get("S.over"), false);
+});
+
+test("big-footprint C: Script text: intro, unknown-command rotation, game-over prompt, escape exits by landmark", () => {
+  const g = bigfoot();
+  assert.equal(g.lines()[0], "THIS PLACE HAS A BIG FOOTPRINT");
+  assert.match(g.lines()[1], /^A Retroment Gaming production\./);
+  g.type("xyzzy", "frobnicate", "blarg", "zork");
+  assert.deepEqual(g.lines().filter(l => !l.startsWith("> ")).slice(-4).map(l => l.slice(0, 12)),
+    ["You try that", "That doesn't", "Nice try, de", "You try that"]);
+  assert.ok(g.lines().some(l => l.startsWith("Exits: ")), "the tour shows compass exits");
+  g.type(...TOUR, "s");
+  assert.match(g.lines().at(-1), /fountain is ahead\.$/);
+  assert.ok(!g.lines().slice(-3).some(l => l.startsWith("Exits: ")), "the escape names exits by landmark only");
+  g.type("s", "s", "look", "say peacocks");
+  g.type("look");
+  assert.equal(g.last(), "The story's over, detective. RESTART or QUIT.");
 });
