@@ -16,11 +16,13 @@
                 "a|b" = either one; a list = every one of them; "" = nothing was typed. Hyphens count as spaces, and
                 for go a direction is spelled out ("d" is "down").
               any:[COND, ...]  at least one of them passes
-   "look <thing>" examines it ("look around" still looks). The echo of what the
+   "look <thing>" examines it ("look around" still looks); "look under/behind/in <thing>"
+   searches it; "pick up <thing>" takes it; "climb <stairs word or direction>" walks. The echo of what the
    player typed never turns [id] into a name.
    Input: punctuation is dropped from typed words (letters, digits, hyphens and
           apostrophes stay), so "say giraffe!" and "north." work. List this add-on
           before any add-on that wraps act() (restart), so they see clean words too.
+   Order: its replies answer before any add-on listed after it (nouns) gets a turn.
    Effect: line:[part, ...]   prints the parts joined together. A part is TEXT, or
              { list:[TEXT, ...], none:TEXT }: the non-empty ones joined with ", ", or none.
    ------------------------------------------------------------------------- */
@@ -35,7 +37,7 @@
     const ok = reply(ON.get(G.rooms[S.room])[v]) || reply(ON.get(G)[v]); said = ""; return ok; };
   const verbs = new Set([...ON.values()].flatMap(Object.keys));
   const commands = {};
-  for (const v of verbs) if (!CMDS[v]) commands[v] = a => answer(v, a) || print(txt(G.fallback || "You can't do that here."));
+  for (const v of verbs) if (!CMDS[v]) commands[v] = () => print(txt(G.fallback || "You can't do that here."));   // before() answers first
   const act0 = act;   // clean the words; the echo line still shows what was typed
   act = w => act0(w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x)));
   const plain = print;   // the echo stays literal: "[coin]" must not print the item's name
@@ -52,10 +54,13 @@
     },
     effects: { line: v => print(v.map(part).join("")) },
     before(v, a) {
+      const [w0, ...rest] = a.split(" ");
+      if (v === "look" && ["under", "behind", "in", "inside", "beneath"].includes(w0) && rest.length) return exec("search", rest.join(" ")), true;
       if (v === "look" && a && !["around", "room", "here"].includes(a)) return exec("examine", a), true;
-      const way = v === "go" && (G.rooms[S.room].ways?.[a] || ALIAS[a]);
-      if (way && way !== a && isDir(way)) return exec("go", way), true;   // "go upstairs", "climb stairs"
-      if (!commands[v] && verbs.has(v)) return answer(v, a);
+      if (v === "take" && w0 === "up" && rest.length) return exec("take", rest.join(" ")), true;   // "pick up the grapes"
+      const way = (v === "go" || v === "climb") && (G.rooms[S.room].ways?.[a] || ALIAS[a] || (v === "climb" && isDir(a) && a));
+      if (way && (way !== a || v === "climb") && isDir(way)) return exec("go", way), true;   // "go upstairs", "climb stairs"
+      if (verbs.has(v) && answer(v, a)) return true;
     },
     validate(need) {
       for (const v of verbs) need(!(v in COND), `on.${v}`, "verb name is also a condition key");

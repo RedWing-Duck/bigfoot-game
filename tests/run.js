@@ -311,3 +311,53 @@ test("QA-01: 'say peacock' (singular) is accepted at a checkpoint", () => {
   assert.equal(g.get("S.over"), false);
   assert.match(g.last(), /sprints toward the screaming/);
 });
+
+// ---- Polish (Script rev 3). Milestone A: coverage, built from the game's own noun data.
+const BAD = [/^I don't understand/, /^You try that\. The universe/, /^That doesn't make sense, even/, /^Nice try, detective/,
+  /^Nothing like that around here\.$/, /^You don't see that/];
+const TIER1 = ["take", "touch", "push", "pull", "open", "close", "knock", "sit on", "climb"];
+const STATE = { P1: "S.flags.p1 = true", P2: "S.flags.p2 = true", P3: "S.flags.p3 = true", CP7_DONE: "S.flags.cp7_done = true" };
+test("Polish A: coverage: every noun, every word, both phases, examine + Tier 1 verbs never get a confused line", t => {
+  const g = bigfoot(), nouns = g.get("G.nouns"), rooms = Object.keys(g.get("G.rooms")), fails = [];
+  let tried = 0;
+  for (const phase of ["TOUR", "ESCAPE"]) for (const [id, n] of Object.entries(nouns)) {
+    const keys = (n.examine || []).map(l => l[0]);
+    if (!keys.some(k => !k || k === phase || k.startsWith(phase + "&") || k in STATE)) continue;
+    const where = n.at === "any" ? rooms.filter(r => phase === "ESCAPE" || !["terrace", "enclosure"].includes(r)) : [n.at];
+    if (phase === "TOUR" && ["terrace", "enclosure"].includes(n.at)) continue;
+    const setup = keys.filter(k => k in STATE && !keys.some(x => !x || x === phase)).map(k => STATE[k]).join(";");
+    for (const room of where) {
+      g.run(`S.over = false; S.room = ${JSON.stringify(room)}; S.flags = {}; S.count = { turns: 5, strikes: 0, clock: 18, secrets: 0 };
+        S.loc.don = ${phase === "TOUR" ? JSON.stringify(room) : "null"}; S.loc.nando = null;
+        ${phase === "ESCAPE" ? "S.flags.escape = true; S.mark.tick = 5;" : ""} ${setup}; globalThis.__snap = JSON.stringify(S);`);
+      for (const cmd of [...n.words.map(w => "examine " + w), ...TIER1.map(v => `${v} ${n.words[0]}`)]) {
+        g.run("S = JSON.parse(__snap)");
+        const k = g.lines().length; g.type(cmd); tried++;
+        const out = g.lines().slice(k + 1);
+        if (!out.length || out.some(l => BAD.some(b => b.test(l)))) fails.push(`${phase} ${room} ${id}: "${cmd}" -> ${out.join(" / ") || "(nothing)"}`);
+      }
+    }
+  }
+  t.diagnostic(`${tried} commands tried`);
+  assert.deepEqual(fails, []);
+});
+
+test("Polish A: x lemur, smell humidor, look under table answer in voice; strike verbs only on strike objects", () => {
+  const g = bigfoot();
+  g.type("n", "w", "e", "e", "w", "n", "look under table");
+  assert.match(g.last(), /Gum\? In this house\?/);
+  g.type("say both", "s", "u", "e", "smell humidor");
+  assert.equal(g.last(), "Cedar, tobacco, and a little bit of money.");
+  const h = bigfoot();
+  h.type(...TOUR, "s", "s", "s", "s", "s", "d", "say jaguar");   // nothing released: CAUGHT is fine, we only need ESCAPE text
+  const e = bigfoot();
+  e.type(...TOUR, "s", "s", "s", "run", "e", "d");
+  e.run("S.flags.checkpoint = false"); e.type("n", "x lemur");
+  assert.match(e.last(), /eats another grape, slowly, at you/);
+  const s = bigfoot();
+  s.type("n", "touch banister", "sit on piano bench", "w", "e", "e", "sit on bench", "pull keys");
+  assert.equal(s.get("S.count.strikes"), 1, "banister and bench are no strike; the piano keys are");
+  const t0 = s.get("S.count.turns");
+  s.type("smell", "listen", "search bench", "dance");
+  assert.equal(s.get("S.count.turns"), t0, "info verbs are free; new verbs on the tour cost no turn");
+});

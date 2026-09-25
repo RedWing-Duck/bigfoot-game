@@ -1,1 +1,1 @@
-{ "addons": ["restart", "verbs", "messages"] }
+{ "addons": ["restart", "verbs", "nouns", "messages"] }
