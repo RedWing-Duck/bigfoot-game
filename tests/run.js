@@ -200,3 +200,59 @@ test("big-footprint C: Script text: intro, unknown-command rotation, game-over p
   g.type("look");
   assert.equal(g.last(), "The story's over, detective. RESTART or QUIT.");
 });
+
+// ---- Regression: the verified walkthrough from Critical Path QA, step by step. Rerun every week.
+// [command, expected Bigfoot clock after it (null = tour, clock off), text the step must print]
+const WALKTHROUGH = [
+  ["north", null], ["west", null], ["east", null], ["east", null], ["west", null],
+  ["north", null, "Sunday gravy?"], ["say both", null, "Both!"], ["south", null], ["up", null],
+  ["east", null, "bookstore called"], ["say dog-eared page", null, "(Received: GOLD COIN)"],
+  ["west", null], ["west", null], ["north", null], ["north", null], ["north", 18],
+  ["open giraffe gate", 17, "Perfect alibi: GIRAFFE."], ["south", 16], ["south", 15],
+  ["use gold coin on hippo", 14, "(Received: SHIPPING MANIFEST)"], ["south", 13, "Why are you up here?"],
+  ["run", 12, "You bolt."], ["east", 11], ["down", 10, "Why are you up here?"], ["say giraffe", 9, "Nando swears and runs."],
+  ["push thirteenth step", 8, "(Received: DEAL PHOTOS)"], ["south", 7]
+];
+const walk = (g, steps) => steps.forEach(([cmd, clock, says], i) => {
+  const n = g.lines().length; g.type(cmd);
+  const out = g.lines().slice(n).join("\n");
+  assert.equal(g.get("S.over"), false, `step ${i + 1} (${cmd}) ended the game:\n${out}`);
+  if (clock !== null) assert.equal(g.get("S.count.clock"), clock, `step ${i + 1} (${cmd}): clock`);
+  else assert.equal(g.get("S.flags.escape || false"), false, `step ${i + 1} (${cmd}): still on the tour`);
+  if (says) assert.ok(out.includes(says), `step ${i + 1} (${cmd}) should print "${says}", got:\n${out}`);
+  assert.equal(g.get("S.count.strikes || 0"), 0, `step ${i + 1} (${cmd}): no strikes`);
+});
+
+test("regression: verified walkthrough, steps 1-28, ends CLEAN GETAWAY 2/3", () => {
+  const g = bigfoot();
+  walk(g, WALKTHROUGH);
+  g.type("down");
+  assert.match(g.last(), /^CLEAN GETAWAY[\s\S]*Secrets recovered: 2\/3\.$/);
+});
+
+test("regression: W2 branch (26a-26c) ends CLEAN SWEEP 3/3", () => {
+  const g = bigfoot();
+  walk(g, [...WALKTHROUGH.slice(0, 26), ["east", 7], ["play cielito lindo", 6, "(Received: LEDGER)"], ["west", 5], ["south", 4]]);
+  assert.ok(g.lines().includes("Somewhere behind you, a thud rattles the chandeliers."), "clock 6 warning");
+  g.type("down");
+  assert.match(g.last(), /^CLEAN SWEEP[\s\S]*3\/3\. Perfect run\.$/);
+});
+
+test("BR-01: punctuation in typed input is ignored", () => {
+  const g = bigfoot();
+  g.type("north.", "west!", "east", "east", "west", "north");
+  assert.equal(g.get("S.room"), "dining");
+  g.type('say "both."');
+  assert.ok(g.get("S.flags.q1"), "Q1 accepts say \"both.\"");
+  assert.equal(g.get("S.count.strikes || 0"), 0);
+  const h = bigfoot();
+  h.type(...TOUR);
+  h.type("open giraffe gate", "s", "s", "s", "run", "e", "d", "say giraffe!");
+  assert.equal(h.get("S.over"), false, "Nando accepts the alibi");
+  h.type("push 13th step.");
+  assert.equal(h.get("S.loc.photos"), "player");
+  h.type("e", "play cielito lindo...");
+  assert.equal(h.get("S.loc.ledger"), "player");
+  h.type("w", "s", "restart!");
+  assert.equal(h.get("S.room"), "elevator", "restart works with punctuation");
+});

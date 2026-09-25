@@ -13,6 +13,9 @@
                 "a|b" = either one; a list = every one of them. Hyphens count as spaces, and
                 for go a direction is spelled out ("d" is "down").
               any:[COND, ...]  at least one of them passes
+   Input: punctuation is dropped from typed words (letters, digits, hyphens and
+          apostrophes stay), so "say giraffe!" and "north." work. List this add-on
+          before any add-on that wraps act() (restart), so they see clean words too.
    Effect: line:[part, ...]   prints the parts joined together. A part is TEXT, or
              { list:[TEXT, ...], none:TEXT }: the non-empty ones joined with ", ", or none.
    ------------------------------------------------------------------------- */
@@ -28,7 +31,9 @@
   const verbs = new Set([...ON.values()].flatMap(Object.keys));
   const commands = {};
   for (const v of verbs) if (!CMDS[v]) commands[v] = a => answer(v, a) || print(txt(G.fallback || "You can't do that here."));
-  const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
+  const act0 = act;   // clean the words; the echo line still shows what was typed
+  act = w => act0(w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x)));
+  const part = p =>p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
   addon({
     name: "verbs",
     commands, aliases: G.aliases, free: G.free,

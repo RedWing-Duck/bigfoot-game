@@ -583,6 +583,18 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
+/* ---- ADD-ON: restart ("restart" starts a new game, even after an ending) ----
+   No data. The engine only accepts "menu" once a game is over, so this wraps
+   the engine's act() to catch "restart" first.
+   ------------------------------------------------------------------------- */
+{
+  const act0 = act;
+  act = w => w[0] === "restart" ? play(true) : act0(w);
+  addon({ name: "restart" });
+}
+</script>
+
+<script>
 /* ---- ADD-ON: verbs (room and global replies for any verb; what was typed as a condition)
    Data:  rooms.X.on / on: { verb: REPLY }   REPLY = a string, or a list of { if:COND, ...EFFECT }
             (a string entry = { say }). The current room's reply is tried first, then the global
@@ -598,6 +610,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 "a|b" = either one; a list = every one of them. Hyphens count as spaces, and
                 for go a direction is spelled out ("d" is "down").
               any:[COND, ...]  at least one of them passes
+   Input: punctuation is dropped from typed words (letters, digits, hyphens and
+          apostrophes stay), so "say giraffe!" and "north." work. List this add-on
+          before any add-on that wraps act() (restart), so they see clean words too.
    Effect: line:[part, ...]   prints the parts joined together. A part is TEXT, or
              { list:[TEXT, ...], none:TEXT }: the non-empty ones joined with ", ", or none.
    ------------------------------------------------------------------------- */
@@ -613,7 +628,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const verbs = new Set([...ON.values()].flatMap(Object.keys));
   const commands = {};
   for (const v of verbs) if (!CMDS[v]) commands[v] = a => answer(v, a) || print(txt(G.fallback || "You can't do that here."));
-  const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
+  const act0 = act;   // clean the words; the echo line still shows what was typed
+  act = w => act0(w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x)));
+  const part = p =>p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
   addon({
     name: "verbs",
     commands, aliases: G.aliases, free: G.free,
@@ -628,18 +645,6 @@ document.addEventListener("DOMContentLoaded", () => {
       for (const w in G.aliases || {}) need(w !== G.aliases[w], `aliases.${w}`, "alias points at itself");
     }
   });
-}
-</script>
-
-<script>
-/* ---- ADD-ON: restart ("restart" starts a new game, even after an ending) ----
-   No data. The engine only accepts "menu" once a game is over, so this wraps
-   the engine's act() to catch "restart" first.
-   ------------------------------------------------------------------------- */
-{
-  const act0 = act;
-  act = w => w[0] === "restart" ? play(true) : act0(w);
-  addon({ name: "restart" });
 }
 </script>
 
