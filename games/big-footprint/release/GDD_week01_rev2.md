@@ -171,4 +171,4 @@ Offstage only: the escaped prisoner (the Don's former accountant, who freed the 
 - **Avoid:** real people's names, drug names or drug-making details, gore, on-screen killing, slurs, mocking accents or heritage stereotypes. Heritage shows up through family, food, music, and architecture.
 
 ## 11. Credits
-Chat contributors: **[PENDING: pull from the chat bot]**. Not in the build yet; see CHANGELOG.
+**Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors. The intro screen already reads "A Retroment Gaming production."

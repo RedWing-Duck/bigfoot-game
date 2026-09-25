@@ -11,5 +11,7 @@ Everything for review, saved together with the build.
 | [`CHANGELOG_week01.md`](CHANGELOG_week01.md) | Changelog and known issues |
 | [`qa/`](qa/) | The three original QA reports |
 | [`original/`](original/) | The Script as delivered (rev 1), for diffing |
+| [`rev3/`](rev3/) | The 10/10 polish inputs: GDD rev 3, Script rev 3 additions, build brief, QA focus |
 
-Open item for release: **credits from the chat bot** (GDD section 11).
+Credits: **Retroment Gaming** (Week 01 was a dry run, so there are no chat contributors).
+The build is the 10/10 polish pass (GDD rev 3). `GDD_week01_rev2.md` and `SCRIPT_week01_rev2.txt` describe the rev 2 base; everything the polish added is in `rev3/`, and the changelog lists what changed.
