@@ -17,7 +17,7 @@
             "Through the doorway: " + its REVISIT (TOUR) or again (ESCAPE) text
           groups: { verb: ["other", ...] }   more keys to try for a verb ("push": ["handle"])
           strike: EFFECT, strikeVerbs: [...], strikeWith: [...]   during keys.TOUR, a strike verb
-            (noting STRIKE3_BY = the thing's strike name)
+            (noting STRIKE3_BY = the thing's strike name, STRUCK = its id)
             on a thing with "strike" runs the strike effect (strikeWith verbs: when a strike
             thing is named anywhere in the line, "use coin on hippo")
           tourFree: true   commands this add-on answers cost no turn while keys.TOUR passes
@@ -180,7 +180,8 @@
     for (const npc in G.topics || {}) { const P = G.topics[npc];
       if (!test(P.when)) continue;
       if (P.coldKey && key(P.coldKey)) return say([null, rotate(P.cold)]);
-      const hits = P.list.flatMap(t => t.words.filter(w => has(a, w)).map(w => ({ t, len: w.split(" ").length }))).sort((x, y) => y.len - x.len);
+      const one = a.split(" ").map(w => w.replace(/s$/, "")).join(" ");   // "hippos" asks about the hippo
+      const hits = P.list.flatMap(t => t.words.filter(w => has(a, w) || has(one, w)).map(w => ({ t, len: w.split(" ").length }))).sort((x, y) => y.len - x.len);
       return say(pick(hits[0]?.t.lines || P.other)); }
   };
   const commands = {};
@@ -218,6 +219,7 @@
       const target = (G.strikeWith || []).includes(v) ? hits.find(x => thing(x).strike) : t.strike && h;
       if (target && ((G.strikeVerbs || []).includes(v) || (G.strikeWith || []).includes(v))) {
         S.nouns.notes.STRIKE3_BY = thing(target).strike;   // what caused it (for the L1 opener)
+        S.nouns.notes.STRUCK = target.id;                   // and the thing itself
         run(G.strike); if (tourFree()) refund(); return true; }
     }
     if (v === "talk") return h.kind === "noun" ? say(lines(t, "talk", a) || lines(CAT[t.cat], "talk", a) || [null, "Nobody by that name around.", null, "free"]) : undefined;

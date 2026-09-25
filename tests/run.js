@@ -752,3 +752,20 @@ test("Playtest round 4 P2s: F-01 to F-03", () => {
   assert.match(play("n", "w", "e", "e", "w", "n", "say both", "s", "u", "e", "set fire to humidor").last(), /^No matches, no lighter/, "F-03");
   assert.match(play("n", "w", "e", "e", "w", "n", "say both", "s", "u", "knock over vase").last(), /before the pieces stopped bouncing/, "F-03: knock over = break");
 });
+
+test("Playtest round 4 P3s: F-04 to F-09", () => {
+  assert.equal(play("n", "say thank you").last(), "\"Thank me with a plaque.\"", "F-04");
+  assert.equal(play("n", "say you have a beautiful home").last(), "\"Tell me something I don't know.\" He's delighted.", "F-04");
+  assert.match(play("n", "ask don about me").last(), /bookstore man who sweats/, "F-04: about me");
+  for (const [q, a] of [["his father", /My father's town/], ["god", /needs a saint/], ["the photos", /Two families/], ["the lion", /needs a saint/], ["hippos", /A lady/]])
+    assert.match(play("n", "ask don about " + q).last(), a, "F-05 " + q);
+  assert.match(play(...TOUR.slice(0, 14), "pet pepita").last(), /Pepita doesn't like strangers/, "F-06");
+  assert.match(play(...TOUR.slice(0, 14), "take coins").last(), /Those are Pepita's/, "F-06: the coins keep theirs");
+  for (const c of ["ask don", "talk to don"]) assert.equal(play(c).last(), "You'll meet him in a second. You can already hear him.", "F-07 " + c);
+  const b = toEscape(), t0 = b.get("S.count.turns"); b.type("show", "give");
+  assert.deepEqual(b.lines().slice(-3), ["Show what, to whom?", "> give", "Give what, to whom?"], "F-08");
+  assert.equal(b.get("S.count.turns"), t0, "F-08: free");
+  const f = toEscape(); f.type("s", "s", "s", "x flashlight");
+  assert.equal(f.last(), "The beam is pointed straight at your face. That's the point of it.", "F-09");
+  assert.equal(f.get("S.over"), false, "F-09: free, the checkpoint stays open");
+});

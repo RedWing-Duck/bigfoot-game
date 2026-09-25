@@ -161,6 +161,7 @@ const T = {
     wrong: ["\"That's not what you told my people.\" His smile tightens. \"What's the bookstore called?\"",
       "The smile is gone. \"Twice now, Walter. I don't like three. The bookstore. Its name.\""] },
   strikePepita: "The Don's smile tightens. \"Those are Pepita's, Walter. Hands to yourself.\"",   // PT-11
+  strikeHippo: "The Don's smile tightens. \"Pepita doesn't like strangers, Walter. Hands to yourself.\"",   // F-06 (QA text)
   strike1: "The Don's smile tightens. \"Hands to yourself, Walter. That's a collector's piece.\"",
   strikeStep: "The Don's smile tightens. \"Mind your feet, Walter. Those stairs are older than you.\"",   // BG-09 (QA text)
   strikePiano: "The Don's smile tightens. \"Hands off Mama's piano, Walter.\"",
@@ -281,8 +282,11 @@ const terrace = [0, 1].flatMap(g => [0, 1].map(j => ({ if: { ...ESC, ...penned("
   text: [R11.opening, R11.giraffe[g], R11.jaguar[j], R11.closing].join(" ") })));
 
 // ---- Tour strikes (GDD 7): take, touch, open, push, play or use-on a strike object during TOUR
+const NOT_MET = [{ if: { ...TOUR, said: "don|chava|don chava|salvatore" }, add: { turns: -1 }, say: "You'll meet him in a second. You can already hear him." }];   // BG-13, F-07 (QA text)
+const FLATTER = { if: { here: "don", said: "love|like|beautiful|amazing|great|nice" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] },   // NB-09
+  { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] };
 const STRIKE = { add: { strikes: 1 }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.strike2 },
-  { if: { noted: { STRIKE3_BY: "HIPPO" } }, text: T.strikePepita }, { if: { noted: { STRIKE3_BY: "STEP" } }, text: T.strikeStep },
+  { if: { any: [{ noted: { STRUCK: "R8.hippo" } }, { noted: { STRUCK: "hippo" } }] }, text: T.strikeHippo }, { if: { noted: { STRIKE3_BY: "HIPPO" } }, text: T.strikePepita }, { if: { noted: { STRIKE3_BY: "STEP" } }, text: T.strikeStep },
   { if: { noted: { STRIKE3_BY: "PIANO" } }, text: T.strikePiano }, T.strike1] };   // PT-11, BG-09
 const strikes = (words, by, verbs = ["use"]) =>   // use-on a strike object; other strike verbs: nouns add-on (GDD 12.1 D1)
  
@@ -637,6 +641,7 @@ const G = {
     greet: "talk", chat: "talk", introduce: "talk", whisper: "say", mutter: "say", reply: "say", answer: "say", respond: "say",   // F-02
     slap: "hit", headbutt: "hit", bite: "hit", elbow: "hit", choke: "hit", vandalize: "break", deface: "break", trash: "break",   // F-03
     ignite: "burn", light: "burn" },   // verbs add-on
+  bare: { show: "Show what, to whom?", Give: "Give what, to whom?" },   // F-08 (QA text), free
   phrasal: { "knock over": "break", "set fire": "burn", "scream at": "provoke", "yell at": "provoke", "shout at": "provoke", "holler at": "provoke" },   // F-03
   free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen", "where", "exits", "ways", "map", "save"],   // GDD 12.1 D2; NB-04
   fallback: T.fallback,
@@ -658,7 +663,7 @@ const G = {
 
   rooms: {
     elevator: { name: "Private Elevator", desc: desc("elevator"), exits: exits("elevator", { north: "foyer" }),   // R1
-      on: { examine: [{ if: { ...TOUR, said: "don|chava|don chava|salvatore" }, add: { turns: -1 }, say: "You'll meet him in a second. You can already hear him." }],   // BG-13 (QA text)
+      on: { examine: NOT_MET, talk: NOT_MET, ask: NOT_MET, tell: NOT_MET,   // BG-13, F-07
         go: [
         { if: { said: "down", ...TOUR }, say: T.downTour },
         { if: { said: "down", max: { secrets: 1 } }, say: DOWN_EMPTY },
@@ -768,8 +773,7 @@ const G = {
     ask: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],   // D3
     tell: [{ if: { flag: "checkpoint", only: "nando|guard|about|him" }, add: { turns: -1 }, rotate: T.nando.repeat },   // NB-03: "tell nando <text>" = say <text>
       ...CHECKPOINT_SAY,
-      { if: { here: "don", said: "love|like|beautiful|amazing|great|nice" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] },   // NB-09
-        { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
+      FLATTER],
     bribe: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } }, { if: { here: "don" }, say: T.don.social.bribe }],
     provoke: [{ if: { here: "don" }, say: [{ if: { key: "STRIKES=2" }, text: "He says nothing at all. That's worse." },   // BG-05 (QA text), no strike
       { if: { key: "STRIKES=1" }, text: "\"Careful.\"" }, "He laughs, but his eyes don't. \"Walter. We were getting along so well.\""] }],
@@ -778,7 +782,9 @@ const G = {
     run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: [{ if: { in: "foyer" }, text: T.foyerGuard.run }, T.guard.run] },
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "RUN2" } },   // CP-01: a second run goes straight to CAUGHT, no confused line
       { add: { turns: -1 }, say: T.nudge.run }],   // BR-08: free outside a checkpoint
+    examine: [{ if: { flag: "checkpoint", said: "flashlight|beam|torch" }, say: "The beam is pointed straight at your face. That's the point of it." }],   // F-09 (QA text)
     Say: [...CHECKPOINT_SAY,   // QA-01, D4, CP-01, NB-01
+      { if: { here: "don", said: "thank|thanks" }, say: T.don.social.thank }, FLATTER,   // F-04: intent words before topics
       { if: { not: { here: "don" } }, add: { turns: -1 }, say: "You say it out loud. The house doesn't answer." }],   // NB-05 (QA text); with the Don: talk or a topic (nouns add-on)
     hint: [   // Script E1: each ladder keeps its own place (nouns add-on's ladder effect)
       { if: { flag: "checkpoint" }, ladder: T.ladder.checkpoint },
@@ -1019,8 +1025,8 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
   list: [
     topic("mother|mama|mama rosa|rosa", "\"At dinner. She deserves a table.\"", "\"My mother is not small talk.\"", "\"'Cielito Lindo.' Every Sunday. The whole street could hear her. Nobody ever complained. Nobody would dare.\"", "Q1"),
     topic("nonna|grandmother|grandma", "\"Palermo. Four foot ten. She kept time with a wooden spoon and kept order with the same spoon.\"", "\"She'd have liked you less.\""),
-    topic("family", "\"Two families, one house. My mother's people from the mountains out west, my father's from Palermo. I never pick. Never.\"", "\"Family is not your business, Walter.\""),
-    topic("palermo|italy|sicily", "\"My father's town. Lemons, churches, and men who never raise their voices. I learned a lot there.\"", "\"Far away. Like you'll be, soon.\""),
+    topic("family|photos|photo|pictures|picture", "\"Two families, one house. My mother's people from the mountains out west, my father's from Palermo. I never pick. Never.\"", "\"Family is not your business, Walter.\""),
+    topic("palermo|italy|sicily|father|papa|dad", "\"My father's town. Lemons, churches, and men who never raise their voices. I learned a lot there.\"", "\"Far away. Like you'll be, soon.\""),
     topic("mountains|mexico|west coast", "\"My mother's mountains. Cold mornings, strong coffee, and church bells you can hear three valleys away.\"", "\"Mountains are mountains.\""),
     topic("song|cielito lindo|music", "\"At dinner.\" He taps his heart.", "\"Don't hum at me.\"", "\"Her song. Only hers. You play it on that piano, you'd better play it right.\"", "Q1"),
     topic("piano", "\"Mama's. Nobody plays her but me, and I play only one thing.\"", "\"Don't look at the piano like that.\""),
@@ -1039,8 +1045,9 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
     topic("business|money|legitimate", "\"Legitimate. It says so on my desk.\" He winks, very slowly.", "\"My business is my business.\""),
     topic("coin|dividend|gold", "\"What coin?\" He smiles. \"Business first.\"", "\"Don't lose it.\"", "\"Your first dividend. Keep it close. In this house, gold always finds a use.\"", "Q2"),
     topic("city|view|window", "\"Mine. Not on paper. But mine.\"", "\"Pretty, from up here.\""),
-    topic("walter|you|me|pryce", "\"You? You're a bookstore man who sweats in elevators. I like you. Mostly.\"", "\"I'm still deciding about you.\""),
-    topic("saint|portraits|paintings", "\"Every family needs a saint. Mine is me. It saves time.\"", "\"Keep walking.\""),
+    topic("walter|pryce|about me|about you|yourself|myself",   // F-04: only "about me / about you"
+       "\"You? You're a bookstore man who sweats in elevators. I like you. Mostly.\"", "\"I'm still deciding about you.\""),
+    topic("saint|portraits|paintings|portrait|painting|god|church|lion|horse", "\"Every family needs a saint. Mine is me. It saves time.\"", "\"Keep walking.\""),
     topic("house|marble|palace|elevator", "\"Every stone, I picked. Every stone, I paid for. Mostly.\"", "\"It's a house.\""),   // NB-09 (QA text)
     topic("dinner|food|pozole|gravy", "\"Patience. Business first, then the table.\"", "\"Patience. Business first, then the table.\"",   // BG-10 (QA text)
       "\"Mama's pozole, Nonna's gravy, same flame, every Sunday. That's the whole philosophy, Walter.\"", "Q1"),
