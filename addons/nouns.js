@@ -15,6 +15,7 @@
           rooms.X.verbs: { verb: LINES }   the verb with no noun, in that room
           rooms.X.words: [...], rooms.X.again: LINES   "examine <room next door>" prints
             "Through the doorway: " + its REVISIT (TOUR) or again (ESCAPE) text
+          throughDoor: roomId => TEXT   what "examine <room next door>" shows (else its revisit or escape-revisit line)
           groups: { verb: ["other", ...] }   more keys to try for a verb ("push": ["handle"])
           strike: EFFECT, strikeVerbs: [...], strikeWith: [...]   during keys.TOUR, a strike verb
             (noting STRIKE3_BY = the thing's strike name, STRUCK = its id)
@@ -98,7 +99,8 @@
     const ex = G.rooms[S.room].exits || {}, to = Object.values(ex).map(x => typeof x === "string" ? x : x.to);
     const r = to.find(r => (G.rooms[r].words || []).some(w => has(a, w)));
     if (!r) return false;
-    const rv = G.rooms[r].revisit, t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
+    const rv = G.rooms[r].revisit, t = G.throughDoor ? G.throughDoor(r)   // the game's own view through the doorway
+      : key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
     return !!t && (print("Through the doorway: " + txt(t)), true);
   };
   // "examine <a word the room's text used>": that sentence, looked at closer
@@ -144,7 +146,7 @@
     if (t === G.nowhere && key("ESCAPE")) feedback(true);
     if ((G.warnings || []).includes(t)) warned = true;
     if ((G.npcLines || []).includes(t)) npcLines++;
-    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
+    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith("Through the doorway: ") && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
       if (heard.room !== S.room) heard = Object.assign([], { room: S.room });
       heard.push(t); } };
   // after the room text in ESCAPE: tails, then Big Tony's band line

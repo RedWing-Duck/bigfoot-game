@@ -2,6 +2,16 @@
 Build: `dist/big-footprint.html` (single file, runs offline). Branch `claude/penthouse-heist-game-o7k6w5`.
 Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors.
 
+## Final wording sweep
+Every noun in every room, tried with examine, search, take, touch, open, push, smell, listen and talk, at every tour stop and through the escape (about 2,700 commands), then read line by line for sense in that place and moment.
+- **Looking through a doorway:** a room you haven't been to shows its first sentence (no more "still" or "again" before you've seen it); a room you know shows its revisit line; in the escape, the room's escape text. Direction sentences are dropped, since you're not standing in that room. The elevator from outside is "doors open, mirrors gleaming", not your reflection.
+- **Things in the right category:** small objects (the bent spoon, napkins, place cards, letter opener, delivery slip, papers, Nando's cap, feathers, tray, shoebox, tube) get their own replies instead of "Too heavy, too bolted"; smoke, sounds, rain, the alarms and the city can't be picked up or knocked on; the roof terrace and the enclosure use outdoor lines instead of "polish and marble dust".
+- **Things behind glass** in the trophy room are searched with your eyes, not "behind it and underneath it".
+- **People who aren't there** (the elevator man, the accountant, Big Tony, the guard on the tour) say so for every verb, instead of "Nothing happens" or "Nobody by that name".
+- **Smell and listen** make sense everywhere: the piano, Pepita and her fountain, the step, the lilies, the grapes, the pots, the palms, the rain, the city, the animals. The Script's merged fixture line ("The building hums. In escape, it hums and thuds.") is now two lines, one per phase, and furniture only creaks once the floor starts shaking.
+- **Fixes along the way:** "take place card" no longer answers as your business card; the humidor opens; the elevator doors are already open in the escape; the letter opener is gone in the escape for every verb; the searched step after it's pressed; no stray "You see: GOLD RIFLE" or "You see: PIANO" under the escape revisits; talking to objects gets a free line.
+- New test: the sweep itself, 2,390 commands, none may print "Nothing happens", "Nobody by that name", a stray "You see:", the merged hum line, or a doorway "again".
+
 ## Playtest round 4 fixes (polish build, fresh phrasings)
 - **P2s:** F-01 to F-03.
   - Look closer: examining any word the room just showed you answers with the sentence it came from ("You look closer. ..."), free. This closes the missing-noun class for good; a new test examines every word read in every room, two levels deep (3,616 commands).
@@ -99,7 +109,7 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 
 ## Known issues
 - **Bugs:** none open. All four playtest rounds are fixed.
-- **Tests:** 48 tests. All 24 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 and P3 checks, round 4's look-closer coverage (3,616 commands), and round 4's P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Tests:** 49 tests. All 25 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 and P3 checks, round 4's look-closer coverage (3,616 commands), round 4's P2 and P3 checks, and the wording sweep (2,390 commands). 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|
@@ -111,8 +121,8 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
   | P3 fixes | "give coin to don" gets his reply; the new terrace lemurs line |
   | QA-01 | The gallery's own peacocks alibi line |
 - **Script items for the writer:**
-  1. The fixture listen line reads "The building hums. In escape, it hums and thuds." It's used as written, but it looks like two lines (tour and escape) merged into one.
-  2. ANIMAL, FOOD, PERSON and OWN have no lines for some Tier 1 verbs. Those fall back to "Nothing happens. The penthouse is unimpressed."
+  1. (Resolved in the wording sweep) The fixture listen line "The building hums. In escape, it hums and thuds." is now split into a tour line and an escape line.
+  2. (Resolved in the wording sweep) ANIMAL, FOOD and PERSON now have lines for the Tier 1 verbs; OWN keeps the Script's set.
   3. "x stairs" on the landing finds nothing, because the Script keeps "stairs" for moving.
   4. The terrace has no escape revisit line; it keeps rev 2's revisit text, which already follows animal state.
 - **Scoped by the coder:**

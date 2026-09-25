@@ -720,7 +720,7 @@ test("Playtest round 3 P3s: BG-07 to BG-13", () => {
 
 test("Playtest round 4: F-01 coverage: every word read in a room, two levels deep, can be examined", t => {
   const NOT = "Nothing like that around here.";
-  const wordsOf = lines => [...new Set(lines.filter(l => !l.startsWith(">")).join(" ").replace(/You look closer\. /g, "").toLowerCase().match(/[\p{L}']{4,}/gu) || [])]
+  const wordsOf = lines => [...new Set(lines.filter(l => !l.startsWith(">") && !l.startsWith("Through the doorway: ")).join(" ").replace(/You look closer\. /g, "").toLowerCase().match(/[\p{L}']{4,}/gu) || [])]
     .map(w => w.replace(/'s$|'$/, "")).filter(w => w.length >= 4);
   let n = 0;
   const sweep = (g, where) => {
@@ -768,4 +768,29 @@ test("Playtest round 4 P3s: F-04 to F-09", () => {
   const f = toEscape(); f.type("s", "s", "s", "x flashlight");
   assert.equal(f.last(), "The beam is pointed straight at your face. That's the point of it.", "F-09");
   assert.equal(f.get("S.over"), false, "F-09: free, the checkpoint stays open");
+});
+
+test("Wording sweep: every noun, every common verb, tour and escape; doorways never say 'again' before you've been there", t => {
+  const BAD = /^(Nothing happens\.|Nobody by that name|You see: )|In escape, it hums|Through the doorway: .*\bagain\b/;
+  let n = 0;
+  const stop = (g, where) => {
+    const saved = JSON.stringify(g.get("S"));
+    const nouns = g.get(`Object.entries(G.nouns).filter(([id, n]) => n.at === S.room).map(([id, n]) => [n.words[0], n.cat])`);
+    const doors = g.get(`Object.values(G.rooms[S.room].exits || {}).map(x => typeof x === "string" ? x : x.to).map(r => (G.rooms[r].words || [r])[0])`);
+    const cmds = [...doors.map(d => "examine " + d), ...nouns.flatMap(([w, cat]) =>
+      ["examine", "search", "take", "touch", "open", "push", "smell", "listen", ...(["PERSON", "ANIMAL"].includes(cat) ? ["talk to"] : [])].map(v => `${v} ${w}`))];
+    for (const c of cmds) { const k = g.lines().length; g.type(c); n++;
+      for (const l of g.lines().slice(k + 1)) assert.ok(!BAD.test(l), `${where}: "${c}" -> ${l}`);
+      g.run(`S = JSON.parse(${JSON.stringify(saved)})`); }
+  };
+  const tour = bigfoot();
+  stop(tour, "tour elevator");
+  assert.equal(tour.lines().filter(l => l.startsWith("Through the doorway: ")).at(-1), "Through the doorway: White marble floors, gold banisters, and two staircases that curve up to the same landing like arms around a hug you didn't ask for.", "the foyer before you've seen it");
+  TOUR.forEach((c, i) => { tour.type(c); if (!c.startsWith("say")) stop(tour, `tour step ${i + 1}`); });
+  for (const route of [["open giraffe gate", "open jaguar gate", "e", "w", "s", "s", "use gold coin on hippo", "s", "say giraffe", "e", "e", "w", "d", "say jaguar", "s"],
+    ["open giraffe gate", "s", "s", "use gold coin on hippo", "s", "run", "e", "d", "say giraffe", "w", "e", "e", "w", "n"]]) {
+    const esc = toEscape();
+    for (const c of route) { esc.type(c); assert.equal(esc.get("S.over"), false, c);
+      if (!/^(say|use|open)/.test(c)) stop(esc, `escape (${c}) in ${esc.get("S.room")}`); } }
+  t.diagnostic(`${n} commands`);
 });

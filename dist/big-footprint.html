@@ -304,8 +304,8 @@ const AGAIN = {   // Script B [ROOM.Rn.escrevisit]
   elevator: [[null, "Back in the gold box. The doors wait. So does the button."]],
   foyer: [["!P3", "The foyer again: the elevator behind you, the [staircase] rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The thirteenth step still sits a hair too high."],
     ["P3", "The foyer again: the elevator behind you, the [staircase] rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The panel under the stairs is still breathing cold air."]],
-  trophy: [[null, "The trophy cases again, rattling. The way out is back toward the staircases."]],
-  salon: [["!P1", "Mama's piano again, in the flashing light. The way out is back toward the staircases."], ["P1", "The open piano and its empty tray. The way out is back toward the staircases."]],
+  trophy: [[null, "The trophy cases again, rattling, the [rifle] still behind glass. The way out is back toward the staircases."]],
+  salon: [["!P1", "Mama's [piano] again, in the flashing light. The way out is back toward the staircases."], ["P1", "The open [piano] and its empty tray. The way out is back toward the staircases."]],
   dining: [[null, "The wrecked dinner again. The lemur hasn't moved and has no plans to. The way out is back toward the staircases."]],
   landing: [[null, "The balcony again, trembling. The portraits one way, the stairs down to the foyer the other."]],
   gallery: [[null, "The painted Dons again, still glaring. Chlorine at one end, the balcony at the other."]],
@@ -313,7 +313,7 @@ const AGAIN = {   // Script B [ROOM.Rn.escrevisit]
   office: [[null, "The ransacked office again. Only the balcony is out."]],
   aviary: [["!OUT_PEACOCKS", "The screaming [aviary] again. Night air one way, chlorine the other."], ["OUT_PEACOCKS", "The empty [aviary] again, feathers still falling. Night air one way, chlorine the other."]],
   terrace: [],   // no ESCAPE revisit line in the Script for R11: its REVISIT text is used
-  enclosure: [[null, "The broken enclosure again, the tire swing still swaying. The terrace is the only way out."]]
+  enclosure: [[null, "The broken enclosure again, a tire swing creaking on its chain. The terrace is the only way out."]]
 };
 const again = id => [...(AGAIN[id] || [])].reverse().map(([k, t]) => ({ if: { flag: `escbeen_${id}`, key: k ? "ESCAPE&" + k : "ESCAPE" }, text: t }));
 const desc = id => { const t = T.room[ROOM[id]];
@@ -800,7 +800,7 @@ const G = {
       { if: { said: "ledger|manifest|photos|photo" }, say: T.item.evidence } ],
     drop: [{ if: { said: "ledger|manifest|photos|photo" }, say: T.item.evidence }],
     Take: [
-      { if: { said: "card|briefing", has: "card" }, say: T.item.card.take },
+      { if: { said: "card|briefing", has: "card", not: { said: "place" } }, say: T.item.card.take },   // not the place cards
       { if: { said: "coin", here: "coin" }, move: { coin: "player" }, say: T.item.coin.take },
       ...["coin", "ledger", "manifest", "photos"].map(i => ({ if: { said: i === "photos" ? "photos|photo" : i, has: i }, add: { turns: -1 }, say: T.item.have })) ],
     talk: [
@@ -1171,6 +1171,108 @@ NOUNS["R11.jaguar"].talk = [FREE_LINE("!OUT_JAGUAR", "The jaguar listens to ever
 for (const id of ["R5.lemur", "R8.lemurs", "R11.lemurs"]) NOUNS[id].talk = [FREE_LINE(null, "The lemurs chatter back. It sounds like they're arguing about you.")];
 // BG-05: provoking the Don; elsewhere, a glare
 G.anywhere.provoke = [[null, "You glare at nothing in particular. It helps a little."]];
+
+// ---- Final wording sweep: every noun, every common verb, in the right place and phase
+const SWEEP_LINE = t => [[null, t]];
+const NO_TALK = [[null, "You say a few words to it. It keeps its opinions to itself.", null, "free"]];
+const BREAK_ART = [["TOUR", "You'd be out of his house before the pieces stopped bouncing. You keep your hands to yourself."], ["ESCAPE", "Vandalism isn't the job. Getting out is."]];
+Object.assign(G.categories, {
+  OBJECT: {   // small things you could pocket but shouldn't
+    Take: [["TOUR", "The Don's eyes are on your hands. You leave it where it is."], ["ESCAPE", "You're here for secrets, not souvenirs."]],
+    handle: [["TOUR", "You nudge it straight. The Don notices. The Don notices everything."], ["ESCAPE", "You turn it over. It isn't what you came for."]],
+    open: SWEEP_LINE("There's nothing to open. It is what it looks like."), close: SWEEP_LINE("There's nothing to open. It is what it looks like."),
+    search: SWEEP_LINE("You turn it over. Nothing hidden, nothing written on the back."),
+    smell: SWEEP_LINE("Polish, and somebody else's money."), listen: SWEEP_LINE("It isn't saying anything."),
+    sit: SWEEP_LINE("No."), climb: SWEEP_LINE("No."), knock: SWEEP_LINE("A small, expensive tap."),
+    eat: SWEEP_LINE("You're hungry, not desperate."), break: BREAK_ART, hit: BREAK_ART },
+  OUTDOOR: {   // the roof: rain, hedges, iron
+    Take: SWEEP_LINE("It's bolted to a roof forty floors up. You leave it there."),
+    handle: SWEEP_LINE("Wet, cold, and no help at all."),
+    open: SWEEP_LINE("It doesn't open. Up here, only the gates do."), close: SWEEP_LINE("It doesn't open. Up here, only the gates do."),
+    search: SWEEP_LINE("Rain, leaves, and nothing useful."),
+    smell: SWEEP_LINE("Wet roses, hay, and animal."), listen: SWEEP_LINE("Rain and alarms. Mostly alarms."),
+    sit: SWEEP_LINE("Not in this rain, and not with that clock."), climb: SWEEP_LINE("Up and down, going nowhere. The way out is inside."),
+    knock: SWEEP_LINE("You knock. The rain doesn't care."), eat: SWEEP_LINE("You're hungry, not desperate."),
+    break: SWEEP_LINE("You hurt your hand. The roof is fine."), hit: SWEEP_LINE("You hurt your hand. The roof is fine.") },
+  AIR: {   // things you can see or hear but not hold
+    "*": SWEEP_LINE("There's nothing there to get your hands on."),
+    smell: SWEEP_LINE("You breathe in. It doesn't help."), listen: SWEEP_LINE("You listen hard. It doesn't tell you anything new.") }
+});
+const C = G.categories;
+for (const c of ["FIXTURE", "FURNITURE", "ART", "OBJECT", "FOOD", "PUZZLE", "OUTDOOR", "AIR"]) C[c].talk = NO_TALK;
+C.FIXTURE.listen = [["TOUR", "The building hums, quietly, the way expensive buildings do."], ["ESCAPE", "The building hums, and every few seconds, somewhere, something thuds."]];   // was the Script's merged line
+C.FURNITURE.listen = [["TOUR", "Not a creak. Good furniture keeps quiet."], ["ESCAPE", "It creaks, a little, every time the floor shakes."]];
+C.ART.Take[1][1] = "You're here for paper, not art.";
+Object.assign(C.FOOD, { search: SWEEP_LINE("Just food. Very, very good food."), open: SWEEP_LINE("It's dinner, not a safe."), listen: SWEEP_LINE("A slow, happy simmer.") });
+C.ANIMAL.open = SWEEP_LINE("It's an animal, not a door. The gates are what open.");
+Object.assign(C.PUZZLE, { smell: SWEEP_LINE("Polish, and the particular smell of something expensive being guarded."),
+  listen: [["TOUR", "Silent. It keeps its secrets the way the Don keeps his."], ["ESCAPE", "Silent. Whatever it's hiding, it isn't going to announce it."], ["ESCAPE&SOLVED", "Silent. It already gave up its secret."]] });
+C.PERSON.handle.unshift(["TOUR", "Better not. In this house, people notice hands."], ["ESCAPE", "Better not. Hands to yourself, even now."]);   // anyone but the Don
+C.PERSON.search.unshift([null, "You're not frisking anybody tonight."]);
+C.PERSON.smell.unshift([null, "Cologne and nerves. Everybody here wears both."]);
+C.PERSON.listen.unshift([null, "You listen. Nobody's saying anything useful."]);
+for (const [cat, ids] of Object.entries({
+  OBJECT: ["R5.placecards", "R5.bentspoon", "R5.napkins", "R9.letteropener", "R9.slip", "R9.papers", "R7.cap", "R10.feathers", "R8.tube", "R4.tray", "R2.shoebox"],
+  AIR: ["R6.smoke", "R2.glass", "R11.alarms", "R11.rain", "R11.city", "R6.foyer"],
+  OUTDOOR: ["R11.garden", "R11.yard", "R11.enclosure", "R12.bars", "R12.footprints", "R12.floor"] })) for (const id of ids) NOUNS[id].cat = cat;
+const more = (id, lines) => { for (const [v, L] of Object.entries(lines)) NOUNS[id][v] = [...(NOUNS[id][v] || []), ...L]; };
+const IN_CASE = { search: SWEEP_LINE("It's behind locked museum glass. You search it with your eyes, which is all anyone gets."),
+  open: SWEEP_LINE("It's locked behind museum glass, and the case isn't opening."), smell: SWEEP_LINE("Glass cleaner. The glass is the only part you can reach."),
+  handle: [["TOUR", "Your fingertips meet the glass, and the Don's eyes meet your fingertips. You take them back."], ["ESCAPE", "Locked behind glass. Leave it."]] };
+for (const id of ["R3.rifle", "R3.roses", "R3.pistol", "R3.diamonds", "R3.headline"]) more(id, IN_CASE);
+const PIANO_SENSES = { smell: SWEEP_LINE("Lemon polish and old sheet music."),
+  listen: [["TOUR", "Silent. It only plays one song, and not for you."], ["ESCAPE", "The strings hum along with every thud."], ["P1", "Silent now. It already sang for you."]] };
+for (const id of ["R4.piano", "R4.lid", "R4.keys"]) more(id, PIANO_SENSES);
+for (const id of ["R8.hippo", "R8.fountain", "R8.mouth"]) more(id, { smell: SWEEP_LINE("Wet bronze and chlorine."), listen: SWEEP_LINE("Water splashing from her nostrils, steady as a heartbeat.") });
+NOUNS["R8.fountain"].Take.unshift(["ESCAPE", "The coins are set into the bottom of the pool. Pepita's savings are not available for withdrawal."]);
+more("R8.fountain", { handle: [["ESCAPE", "Cold water, and gold coins set into the bottom. The mouth is the part that opens."]] });
+more("R2.step", { search: [["P3", "The seam is open now. Nothing behind it but the passage and the cold air."]] });
+const ABSENT = { "R1.man": [[null, "He's gone. Men like that don't wait around."]],
+  "ANY.accountant": [["TOUR", "He isn't here. According to the Don, he isn't anywhere."], ["ESCAPE", "He isn't here. Wherever he is, he's running faster than you."]],
+  "ANY.tony": [["TOUR", "Whatever Big Tony is, he isn't here. You'd know."], ["ESCAPE", "He isn't in this room. Yet. Don't go looking."]],
+  "R7.guard": [["TOUR", "He's gone, radio and all."], ["ESCAPE&!CP7_PENDING", "No guards in sight. You can hear plenty of them."]] };
+for (const [id, L] of Object.entries(ABSENT)) NOUNS[id]["*"] = L;
+more("R8.roof", { Take: SWEEP_LINE("It's a glass roof, twenty feet up. You'd need a ladder and a reason."), handle: SWEEP_LINE("It's a glass roof, twenty feet up. You'd need a ladder and a reason.") });
+more("R8.plants", { Take: SWEEP_LINE("They're rooted, imported, and probably wanted by customs. You leave them."),
+  handle: [["TOUR", "Waxy leaves and a little brass tag. The Don watches you touch his palms."], ["ESCAPE", "The leaves shake. A lemur shakes back."]],
+  search: [["TOUR", "Leaves, soil, a brass tag. Nothing hidden."], ["ESCAPE", "A lemur pelts you with a mango. Nothing else in there."]], smell: SWEEP_LINE("Wet soil and something tropical.") });
+more("R6.vase", { smell: SWEEP_LINE("Lilies, heavy and sweet, like a funeral that went well.") });
+more("R9.humidor", { open: [["TOUR", "You lift the lid an inch. The Don lets it close again with one finger."], ["ESCAPE", "Open and empty. Whatever was worth taking, somebody took."]] });
+more("R5.bowl", { handle: [["TOUR", "You pluck a grape, think better of it, and put it back."], ["ESCAPE", "The lemur watches your hand. You take it back."]],
+  smell: SWEEP_LINE("Grapes. Just grapes."), search: SWEEP_LINE("Grapes, all the way down."),
+  listen: [["TOUR", "Grapes are quiet."], ["ESCAPE", "The grapes are quiet. The lemur eating them is not."]] });
+more("R5.pots", { search: SWEEP_LINE("Hominy in one, meatballs in the other. No secrets, just Sunday."), open: SWEEP_LINE("The lids are already off. It's dinner, not a safe."), listen: SWEEP_LINE("Two pots simmering in stereo.") });
+more("R8.fruit", { handle: SWEEP_LINE("Bruised mangoes and a banana peel. You leave them for the lemurs."), search: SWEEP_LINE("Mangoes and a banana peel. No secrets, just a mess."),
+  smell: SWEEP_LINE("Ripe mango and chlorine."), listen: SWEEP_LINE("Mangoes thudding onto the tiles.") });
+more("R11.alarms", { listen: SWEEP_LINE("Every speaker in the palace, at once. Your ears will be ringing tomorrow.") });
+more("R11.rain", { smell: SWEEP_LINE("Warm rain and wet stone."), listen: SWEEP_LINE("Rain on the leaves, rain on the glass, rain on you.") });
+more("R11.city", { smell: SWEEP_LINE("Rain and exhaust, forty floors down. It smells like freedom."), listen: SWEEP_LINE("Sirens far below, heading somewhere else.") });
+more("R10.peacocks", { listen: SWEEP_LINE("Nine peacocks, screaming in shifts.") });
+more("R11.giraffe", { listen: SWEEP_LINE("Slow chewing. She's in no hurry at all.") });
+more("R11.jaguar", { listen: SWEEP_LINE("Nothing. It's the quietest thing on the roof, and the most frightening.") });
+// "examine <room next door>": what you'd see from here (nouns add-on). Never "again" or "still" before you've been there; no directions.
+const DIRECTIONS = /\b(north|south|east|west|upstairs|downstairs)\b|\b(up|down) (the|to)\b|way out|one way|the other\b|back toward|leads? back|behind you|to one side|straight ahead|\bis out\b/i;
+G.throughDoor = r => {
+  const t = T.room[ROOM[r]];
+  if (r === "elevator" && !test(ESC)) return "The gold elevator, doors open, mirrors gleaming.";   // you can't see your reflection from out here
+  const s = test(ESC) ? (r === "terrace" ? txt(terrace) : txt(t.escape || ""))
+    : S.flags["been_" + r] && typeof t.revisit === "string" ? t.revisit : (t.first || "").split(/(?<=[.!?])\s+/)[0];
+  const [first, ...rest] = s.split(/(?<=[.!?]["”]?)\s+/);
+  return [first, ...rest.filter(x => !DIRECTIONS.test(x))].join(" ").replace(/ again(?=[,.:;])/g, "");
+};
+more("R9.letteropener", { "*": [["ESCAPE", "It's gone. The Don took it with him, of all things."]] });
+more("R1.doors", { open: [["ESCAPE", "They're already open. They're waiting for you."]] });
+NOUNS["R12.sign"].cat = "OUTDOOR";
+more("R12.sign", { search: SWEEP_LINE("Just the sign, and the marker underneath: (PLEASE)."), smell: SWEEP_LINE("Brass and rain.") });
+more("R12.bars", { search: SWEEP_LINE("Bent steel, and a tuft of long, reddish hair caught in the gap."),
+  handle: SWEEP_LINE("The steel is still warm where it bent. That isn't a comforting thought."), smell: SWEEP_LINE("Wet dog."), listen: SWEEP_LINE("The bars creak in the wind.") });
+NOUNS["R12.footprints"]["*"] = SWEEP_LINE("They're footprints. Big ones. You'd rather not stand in them.");
+more("R12.footprints", { smell: SWEEP_LINE("Wet dog and bananas.") });
+more("R12.floor", { Take: SWEEP_LINE("You're not taking a banana peel. You're not taking anything from in here."),
+  handle: SWEEP_LINE("Straw, banana peels, and a tire swing that's still warm. You wipe your hand on your pants."),
+  search: SWEEP_LINE("Straw, peels, and one very large hair. Nothing you want."),
+  smell: SWEEP_LINE("Wet dog, bananas, and something older than both."), listen: SWEEP_LINE("The tire swing creaks on its chain.") });
+more("R10.feathers", { handle: SWEEP_LINE("Soft, and every one has a perfect little eye. You put it down."), smell: SWEEP_LINE("Birdseed and outrage.") });
 </script>
 
 <script>
@@ -1540,6 +1642,7 @@ document.addEventListener("DOMContentLoaded", () => {
           rooms.X.verbs: { verb: LINES }   the verb with no noun, in that room
           rooms.X.words: [...], rooms.X.again: LINES   "examine <room next door>" prints
             "Through the doorway: " + its REVISIT (TOUR) or again (ESCAPE) text
+          throughDoor: roomId => TEXT   what "examine <room next door>" shows (else its revisit or escape-revisit line)
           groups: { verb: ["other", ...] }   more keys to try for a verb ("push": ["handle"])
           strike: EFFECT, strikeVerbs: [...], strikeWith: [...]   during keys.TOUR, a strike verb
             (noting STRIKE3_BY = the thing's strike name, STRUCK = its id)
@@ -1623,7 +1726,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const ex = G.rooms[S.room].exits || {}, to = Object.values(ex).map(x => typeof x === "string" ? x : x.to);
     const r = to.find(r => (G.rooms[r].words || []).some(w => has(a, w)));
     if (!r) return false;
-    const rv = G.rooms[r].revisit, t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
+    const rv = G.rooms[r].revisit, t = G.throughDoor ? G.throughDoor(r)   // the game's own view through the doorway
+      : key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
     return !!t && (print("Through the doorway: " + txt(t)), true);
   };
   // "examine <a word the room's text used>": that sentence, looked at closer
@@ -1669,7 +1773,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (t === G.nowhere && key("ESCAPE")) feedback(true);
     if ((G.warnings || []).includes(t)) warned = true;
     if ((G.npcLines || []).includes(t)) npcLines++;
-    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
+    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith("Through the doorway: ") && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
       if (heard.room !== S.room) heard = Object.assign([], { room: S.room });
       heard.push(t); } };
   // after the room text in ESCAPE: tails, then Big Tony's band line
