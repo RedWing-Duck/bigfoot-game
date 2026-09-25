@@ -184,6 +184,7 @@
       if (v === "examine" && nextDoor(a)) return true;
       const r = !found && pick(RV[S.room][v], a);
       if (r && r[2]) return say(r);                     // "swim in the fountain": a room line that names its own object
+      if ((v === "listen" || v === "smell") && !found) return answer(v, "");   // "listen to the wind": the room's line
       if (CORE.includes(v) && !found) return;   // the engine answers its own commands
       return print("You don't see that."), refund(), true;
     }

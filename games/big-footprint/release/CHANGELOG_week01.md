@@ -10,6 +10,14 @@ Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there
   - Lemurs, Big Tony and Pepita at a checkpoint still get you CAUGHT, but with honest openers.
   - Hostile verbs map onto hit, break, push and steal. The new `provoke` verb gets the Don's lines (no strike). Throwing food gets the pozole line.
   - Using the coin on Pepita after she's open is free and says so.
+- **P3s:** BG-07 to BG-13.
+  - No stray "You see:" lines under the atrium and aviary escape revisits.
+  - "x step" in the foyer examines the thirteenth step.
+  - The step and the piano have their own first-strike lines.
+  - New Don topics: dinner (before and after Q1) and family; reina, the empty chair and the elevator find their topics.
+  - "listen to" or "smell" an unknown thing gives the room's line; `swim` has lines.
+  - "take all" / "drop all" get "One thing at a time, detective."
+  - "x don" in the elevator, before you meet him, gets a line.
 
 ## Playtest round 2 fixes (polish build)
 - **P2s:** NB-01 to NB-04.
@@ -76,8 +84,8 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 - **A: Skeleton.** 12 rooms and exits; movement, look, help, quit.
 
 ## Known issues
-- **P1/P2:** none known. Round 3's P3s (BG-07 to BG-13) are open, awaiting the go.
-- **Tests:** 44 tests. All 20 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Bugs:** none open. All three playtest rounds are fixed.
+- **Tests:** 45 tests. All 21 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|

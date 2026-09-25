@@ -428,7 +428,7 @@ test("Polish B: ESC_REVISIT, tails, foreshadowing and Nando's traces", () => {
   g.type("s", "s");
   assert.ok(g.lines().includes("Past the fountain, a flashlight beam slides along the portraits in the gallery. Someone's waiting."));
   g.type("s", "run", "n");
-  assert.ok(g.lines().some(l => l.startsWith("Pepita again, mouth shut")), "ESC_REVISIT");
+  assert.ok(g.lines().some(l => l.startsWith("Pepita the HIPPO again, mouth shut")), "ESC_REVISIT");
   g.type("s");
   assert.ok(g.lines().some(l => l.startsWith("Nando's cap lies upside down")), "CP7_DONE trace");
   g.type("e");
@@ -697,4 +697,23 @@ test("Playtest round 3 P2s: BG-01 to BG-06", () => {
   const t0 = p.get("S.count.turns"); p.type("use coin on hippo");
   assert.equal(p.last(), "Pepita's already open, and already empty.", "BG-06");
   assert.equal(p.get("S.count.turns"), t0, "BG-06: free");
+});
+
+test("Playtest round 3 P3s: BG-07 to BG-13", () => {
+  const r = toEscape(); r.type("s", "s", "n", "s");
+  assert.ok(r.lines().slice(-4).some(l => l.startsWith("Pepita the HIPPO again")) && !r.lines().some(l => /^You see: (HIPPO|AVIARY)/.test(l)), "BG-07");
+  const s = toEscape(); s.type("open giraffe gate", "s", "s", "use gold coin on hippo", "s", "run", "e", "d", "say giraffe", "x step");
+  assert.match(s.last(), /^A hair taller than its neighbors/, "BG-08");
+  assert.match(play("n", "kick step").last(), /Those stairs are older than you/, "BG-09");
+  assert.equal(play("n", "w", "e", "e", "kick piano").last(), "The Don's smile tightens. \"Hands off Mama's piano, Walter.\"", "BG-09");
+  assert.equal(play("n", "ask don about dinner").last(), "\"Patience. Business first, then the table.\"", "BG-10");
+  assert.equal(play("n", "ask don about his wife").last(), "\"Family is not for strangers, Walter. Not yet.\"", "BG-10");
+  assert.match(play("n", "ask don about reina").last(), /Reina is the loudest/, "BG-10 alias");
+  const l = play("listen to the xyzzy", "swim");
+  assert.equal(l.lines().at(-3), "Violins, very softly. The music of people who have never once had to hurry.", "BG-11");
+  assert.equal(l.last(), "No pool. Not even for you.", "BG-11");
+  const t = toEscape(), t0 = t.get("S.count.turns"); t.type("take all", "drop all");
+  assert.equal(t.last(), "One thing at a time, detective.", "BG-12");
+  assert.equal(t.get("S.count.turns"), t0, "BG-12: free");
+  assert.equal(play("x don").last(), "You'll meet him in a second. You can already hear him.", "BG-13");
 });

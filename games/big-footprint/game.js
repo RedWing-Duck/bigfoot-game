@@ -162,6 +162,8 @@ const T = {
       "The smile is gone. \"Twice now, Walter. I don't like three. The bookstore. Its name.\""] },
   strikePepita: "The Don's smile tightens. \"Those are Pepita's, Walter. Hands to yourself.\"",   // PT-11
   strike1: "The Don's smile tightens. \"Hands to yourself, Walter. That's a collector's piece.\"",
+  strikeStep: "The Don's smile tightens. \"Mind your feet, Walter. Those stairs are older than you.\"",   // BG-09 (QA text)
+  strikePiano: "The Don's smile tightens. \"Hands off Mama's piano, Walter.\"",
   strike2: "The smile is gone. \"Twice now. I don't like three.\"",
   tourBlock: "The Don puts a hand on your shoulder. \"Private, amigo. This way.\"",
   downTour: "\"Leaving before dessert?\" The Don steers you back out.",
@@ -264,9 +266,9 @@ const AGAIN = {   // Script B [ROOM.Rn.escrevisit]
   dining: [[null, "The wrecked dinner again. The lemur hasn't moved and has no plans to. The way out is back toward the staircases."]],
   landing: [[null, "The balcony again, trembling. The portraits one way, the stairs down to the foyer the other."]],
   gallery: [[null, "The painted Dons again, still glaring. Chlorine at one end, the balcony at the other."]],
-  atrium: [["!P2", "Pepita again, mouth shut, lemurs overhead. Peacocks one way, portraits the other."], ["P2", "Pepita again, jaw hanging open, lemurs overhead. Peacocks one way, portraits the other."]],
+  atrium: [["!P2", "Pepita the [hippo] again, mouth shut, lemurs overhead. Peacocks one way, portraits the other."], ["P2", "Pepita the [hippo] again, jaw hanging open, lemurs overhead. Peacocks one way, portraits the other."]],
   office: [[null, "The ransacked office again. Only the balcony is out."]],
-  aviary: [["!OUT_PEACOCKS", "The screaming aviary again. Night air one way, chlorine the other."], ["OUT_PEACOCKS", "The empty aviary again, feathers still falling. Night air one way, chlorine the other."]],
+  aviary: [["!OUT_PEACOCKS", "The screaming [aviary] again. Night air one way, chlorine the other."], ["OUT_PEACOCKS", "The empty [aviary] again, feathers still falling. Night air one way, chlorine the other."]],
   terrace: [],   // no ESCAPE revisit line in the Script for R11: its REVISIT text is used
   enclosure: [[null, "The broken enclosure again, the tire swing still swaying. The terrace is the only way out."]]
 };
@@ -280,7 +282,8 @@ const terrace = [0, 1].flatMap(g => [0, 1].map(j => ({ if: { ...ESC, ...penned("
 
 // ---- Tour strikes (GDD 7): take, touch, open, push, play or use-on a strike object during TOUR
 const STRIKE = { add: { strikes: 1 }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.strike2 },
-  { if: { noted: { STRIKE3_BY: "HIPPO" } }, text: T.strikePepita }, T.strike1] };   // PT-11
+  { if: { noted: { STRIKE3_BY: "HIPPO" } }, text: T.strikePepita }, { if: { noted: { STRIKE3_BY: "STEP" } }, text: T.strikeStep },
+  { if: { noted: { STRIKE3_BY: "PIANO" } }, text: T.strikePiano }, T.strike1] };   // PT-11, BG-09
 const strikes = (words, by, verbs = ["use"]) =>   // use-on a strike object; other strike verbs: nouns add-on (GDD 12.1 D1)
  
   Object.fromEntries(verbs.map(v => [v, [{ if: { ...TOUR, said: words }, ...STRIKE, note: { STRIKE3_BY: by } }]]));
@@ -331,7 +334,7 @@ const NOUNS = {
       examine: [["TOUR", "Christenings, weddings, a quinceañera, a baby in a tiny tuxedo. In every one, the Don is either handing someone an envelope or holding someone's baby."], ["ESCAPE", "One frame has fallen and cracked straight across a wedding. Someone is going to hear about that."]] },
     "R2.rightstairs": { at: "foyer", cat: "FIXTURE", strike: "STEP", words: ["right staircase", "right stairs", "right side", "business stairs", "business side", "business staircase", "narrow stairs", "thirteen steps"],
       examine: [["TOUR", "Narrower, bare marble, polished to a shine, and no frames on the wall at all. Business doesn't keep pictures. Thirteen steps."], ["ESCAPE", "Thirteen steps, and one of them is wrong. Standing close, you can see it: the thirteenth sits a hair proud of the rest, with a thin dark seam around its edge."], ["P3", "The panel under the thirteenth step hangs open, breathing cold air up at you."]] },
-    "R2.step": { at: "foyer", cat: "PUZZLE", strike: "STEP", puzzle: "P3", words: ["thirteenth step", "13th step", "step thirteen", "step 13", "thirteenth", "top step", "13", "thirteen"],   // + NB-07
+    "R2.step": { at: "foyer", cat: "PUZZLE", strike: "STEP", puzzle: "P3", words: ["thirteenth step", "13th step", "step thirteen", "step 13", "thirteenth", "top step", "13", "thirteen", "step"],   // + NB-07, BG-08
       examine: [["TOUR", "Thirteen up the business side. It looks like every other step, except the shine on it is worn in a small ring, as if someone steps on it more carefully than the rest. The Don is watching your eyes."], ["ESCAPE", "A hair taller than its neighbors, with a seam you'd never notice unless you were looking. The shine is worn in a ring right in the center, right where a thumb would press."], ["P3", "Pressed flat now. The panel beside it hangs open."]],
       search: [["TOUR", "Your hand drifts toward it. The Don clears his throat. \"Admire, Walter. Don't touch.\""], ["ESCAPE", "You run your fingers around the seam. It moves, just barely. It's waiting for a firm push."]] },
     "R2.panel": { at: "foyer", cat: "FIXTURE", words: ["panel", "passage", "hidden door", "hidden passage", "crawlspace", "opening", "hatch", "cold air", "air", "tunnel"],
@@ -560,7 +563,7 @@ const ROOM_VERBS = {
       listen: [["TOUR", "Your own footsteps, and a radio fading around a corner."], ["ESCAPE", "Frames rattling on their hooks, all hundred Dons tapping against the walls at once."]] },
     atrium: { smell: [[null, "Chlorine, wet stone, and tropical flowers."]],
       listen: [["TOUR", "Rain on the glass, water splashing, peacocks screaming somewhere north."], ["ESCAPE", "Splashing, lemurs chattering, and above the glass roof, something heavy walking in the rain."]],
-      swim: [[null, "You'd be wet, you'd be slow, and Pepita would never respect you again.", "fountain"]],
+      swim: [[null, "The only water here is Pepita's pool, and she doesn't share."], [null, "You'd be wet, you'd be slow, and Pepita would never respect you again.", "fountain"]],   // + BG-11
       enter: [[null, "You'd be wet, you'd be slow, and Pepita would never respect you again.", "fountain"]] },
     office: { smell: [["TOUR", "Leather, cedar, and the particular smell of a man who's never been told no."], ["ESCAPE", "Leather, spilled brandy, and panic."]],
       listen: [["TOUR", "Rain on the window, and the Don breathing through his nose while he decides whether he likes you."], ["ESCAPE", "Sirens far below. Thuds far closer."]] },
@@ -651,7 +654,8 @@ const G = {
 
   rooms: {
     elevator: { name: "Private Elevator", desc: desc("elevator"), exits: exits("elevator", { north: "foyer" }),   // R1
-      on: { go: [
+      on: { examine: [{ if: { ...TOUR, said: "don|chava|don chava|salvatore" }, add: { turns: -1 }, say: "You'll meet him in a second. You can already hear him." }],   // BG-13 (QA text)
+        go: [
         { if: { said: "down", ...TOUR }, say: T.downTour },
         { if: { said: "down", max: { secrets: 1 } }, say: DOWN_EMPTY },
         { if: { said: "down" }, set: "won" } ],
@@ -935,6 +939,7 @@ G.alone = {   // Script C2 "(no noun)" lines; SMELL / LISTEN try the room's own 
   knock: [[null, "Knock on what?"]],
   sit: [[null, "You sit on the floor for a moment. It's very clean. You get up."]],
   climb: [[null, "Climb what? Try \"up\" or \"down.\""]],
+  swim: [[null, "No pool. Not even for you.", null, "free"]],   // BG-11 (QA text)
   listen: [["TOUR", "Violins somewhere, footsteps on marble, and the Don breathing through his nose."]],   // PT-01 (QA text; ESCAPE: the band line)
   ...Object.fromEntries(["Take", "touch", "push", "pull", "open", "close"].map(v => [v, [[null, v[0].toUpperCase() + v.slice(1).toLowerCase() + " what?", null, "free"]]]))   // no noun: a free prompt
 };
@@ -968,6 +973,8 @@ G.tails = {   // Script B [ROOM.Rn.tails]: ESCAPE, after the room text
   terrace: [{ key: "OUT_GIRAFFE&OUT_JAGUAR&OUT_PEACOCKS", text: "For one second the roof is quiet. Then the palace below you erupts.", once: true }]
 };
 G.oneAtATime = "One thing at a time, detective.";   // NB-08 (QA text)
+const ALL = { if: { said: "all|everything" }, add: { turns: -1 }, say: G.oneAtATime };   // BG-12
+G.on.Take.unshift(ALL); G.on.drop.unshift(ALL);
 G.spoken = ["say", "tell", "ask"];
 G.extras = 2;   // PT-05: at most two extra lines after a room's text (Nando's greeting counts), in G.tails order, then the band
 G.npcLines = [T.nando.greet, T.nando.greet2, T.nando.greet2ran];
@@ -1013,12 +1020,12 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
     topic("song|cielito lindo|music", "\"At dinner.\" He taps his heart.", "\"Don't hum at me.\"", "\"Her song. Only hers. You play it on that piano, you'd better play it right.\"", "Q1"),
     topic("piano", "\"Mama's. Nobody plays her but me, and I play only one thing.\"", "\"Don't look at the piano like that.\""),
     topic("hippo|pepita|fountain", "\"A lady. She has standards. She has a price. Like everyone.\"", "\"Leave Pepita alone.\""),
-    topic("peacocks|birds", "\"Nine names. Reina is the loudest. She's also my favorite. Don't tell the others.\"", "\"Birds. Loud birds.\""),
+    topic("peacocks|birds|reina", "\"Nine names. Reina is the loudest. She's also my favorite. Don't tell the others.\"", "\"Birds. Loud birds.\""),
     topic("giraffe|mariposa", "\"Mariposa. Butterfly. She's six meters of grace. She eats my hedges and I let her. That's love, Walter.\"", "\"She's on the roof. You'll see.\""),
     topic("jaguar|gato|cat", "\"He came from my mother's mountains. He's the only one in this house who doesn't pretend to like me. I respect that.\"", "\"Don't worry about the cat. Worry about me.\""),
     topic("lemurs", "\"Thieves. Little furry thieves. I have a soft spot for thieves, as long as they're mine.\"", "\"They steal. Everybody steals. Next.\""),
     topic("big tony|tony|bigfoot|creature", "The smile slips for half a second. \"Family pet. Very private. You'll never meet him.\" It sounds like a promise.", "\"No.\""),
-    topic("accountant|contador|prisoner", "The temperature drops. \"On a leave of absence. Next question.\"", "He doesn't answer. He just looks at you until you look away."),
+    topic("accountant|contador|prisoner|empty chair", "The temperature drops. \"On a leave of absence. Next question.\"", "He doesn't answer. He just looks at you until you look away."),
     topic("guards|nando|security", "\"Nando runs my house. Big man, big heart, small patience. And my boys know the rule: the animals come first.\"", "\"They're watching you. That's their job.\""),
     topic("rifle|gun|pistol|trophies", "\"Gifts from friends. I keep every one, behind glass, so I remember who my friends are.\"", "\"Admire. Don't touch. I won't say it again.\""),
     topic("stairs|staircase|steps|thirteenth step", "\"Twelve for family, thirteen for business. People who don't count, don't last.\"", "\"Mind your feet, Walter.\""),
@@ -1029,7 +1036,10 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
     topic("city|view|window", "\"Mine. Not on paper. But mine.\"", "\"Pretty, from up here.\""),
     topic("walter|you|me|pryce", "\"You? You're a bookstore man who sweats in elevators. I like you. Mostly.\"", "\"I'm still deciding about you.\""),
     topic("saint|portraits|paintings", "\"Every family needs a saint. Mine is me. It saves time.\"", "\"Keep walking.\""),
-    topic("house|marble|palace", "\"Every stone, I picked. Every stone, I paid for. Mostly.\"", "\"It's a house.\""),   // NB-09 (QA text)
+    topic("house|marble|palace|elevator", "\"Every stone, I picked. Every stone, I paid for. Mostly.\"", "\"It's a house.\""),   // NB-09 (QA text)
+    topic("dinner|food|pozole|gravy", "\"Patience. Business first, then the table.\"", "\"Patience. Business first, then the table.\"",   // BG-10 (QA text)
+      "\"Mama's pozole, Nonna's gravy, same flame, every Sunday. That's the whole philosophy, Walter.\"", "Q1"),
+    topic("wife|kids|children", "\"Family is not for strangers, Walter. Not yet.\"", "\"Family is not for strangers, Walter. Not yet.\""),
     topic("animals|zoo", "\"Some men buy boats. I bought a family that bites.\"", "\"They're fed. Mostly.\"")
   ] } };
 

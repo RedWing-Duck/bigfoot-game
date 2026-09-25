@@ -86,3 +86,10 @@ Root cause for the suite: the extended coverage test now tries every info and Ti
 | BG-04 | P2 | Lemurs or Big Tony as an alibi got "No animal. No noise." | Fixed | Still CAUGHT, with QA's openers for lemurs, Tony / Bigfoot and the hippo / Pepita |
 | BG-05 | P2 | Hostile verbs got the confused line | Fixed | kill / murder / strangle / stab = hit, smash / slam / tear / burn / wreck / destroy / rip = break, trip = push, pickpocket / rob / swipe = steal (strike rules apply); new `provoke` (threaten, insult, mock, spit, sneer) with the Don's S0-S2 lines, no strike; the glare line elsewhere; the pozole line for throwing food |
 | BG-06 | P2 | Using the coin on an open hippo said she was still shut, and cost a turn | Fixed | "Pepita's already open, and already empty." (free) |
+| BG-07 | P3 | "You see: HIPPO" / "You see: AVIARY" under the R8 and R10 escape revisits | Fixed | The revisit lines carry the tags: "Pepita the [hippo] again…", "The screaming [aviary] again…" |
+| BG-08 | P3 | "x step" in the escape foyer gave the staircase sentence | Fixed | "step" names the thirteenth step (X.R2.step) in R2 |
+| BG-09 | P3 | The step and the piano used the generic "collector's piece" strike line | Fixed | QA's strike-1 lines for the step and the piano |
+| BG-10 | P3 | Reina, empty chair, elevator, dinner and family got "Ask me something interesting" | Fixed | Aliases reina → peacocks, empty chair → accountant, elevator → house; new dinner / food / pozole / gravy (before and after Q1) and wife / kids / children topics (QA text) |
+| BG-11 | P3 | "listen to <unknown>" and bare "swim" got the confused line | Fixed | listen / smell with an unknown noun give the room's line; swim: QA's R8 line, "No pool. Not even for you." elsewhere (free) |
+| BG-12 | P3 | take all / drop all read like a missing noun | Fixed | "One thing at a time, detective." (free) |
+| BG-13 | P3 | "x don" in R1 before meeting him found nothing | Fixed | "You'll meet him in a second. You can already hear him." (tour, free) |
