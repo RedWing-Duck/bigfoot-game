@@ -46,7 +46,7 @@ body.playing #menu,body:not(.playing) #out,body:not(.playing) form{display:none}
 // ---- All player-facing text, keyed by Script id. Logic lives in G below.
 const T = {
   intro: "A Retroment Gaming production.\n\nYour client wants three secrets from Don Chava's penthouse. Your cover: Walter Pryce, bookstore investor, carrying a plaque proposal and a smile. The Don will give you the grand tour himself. Listen to everything. Touch nothing. Get out with at least two.\n\nType HELP for commands.",
-  help: "Move: north, south, east, west, up, down (or n, s, e, w, u, d).\nLook around: look. Look at something: examine [\u200bthing] (or x).\nTake, drop, use [\u200bitem] on [\u200bthing], open, push, play, read.\nTalk: talk to [\u200bperson]. Answer: say [\u200bwords].\nOther: inventory (i), status, hint, quit.\nOn the tour, free actions: look, examine, inventory, status, help, hint. Once the chaos starts, every other command costs time.",   // \u200b: shown as [thing], not read as an [id] tag
+  help: "Move: north, south, east, west, up, down (or n, s, e, w, u, d).\nLook around: look. Look at something: examine [\u200bthing] (or x).\nTake, drop, use [\u200bitem] on [\u200bthing], open, push, play, read.\nTalk: talk to [\u200bperson]. Answer: say [\u200bwords].\nIn a tight spot: run (works once).\nOther: inventory (i), status, hint, quit.\nOn the tour, free actions: look, examine, inventory, status, help, hint. Once the chaos starts, every other command costs time.",   // \u200b: shown as [thing], not read as an [id] tag
   huh: ["You try that. The universe gives you a look usually reserved for bad checks.",
     "That doesn't make sense, even for a guy pitching a bookstore to a kingpin.",
     "Nice try, detective. Say it plain."],
@@ -57,13 +57,15 @@ const T = {
       escape: "The gold box hums, waiting. One button, one way down. Behind you, the double staircase and every problem you left on it." },
     R2: { first: "White marble floors, gold banisters, and two [staircase] that curve up to the same landing like arms around a hug you didn't ask for. The left staircase is wide and carpeted; the right is narrower, polished to a shine. The trophy room glitters west, a piano waits in the salon east, a long table stretches north in the dining hall, the stairs lead up, and the elevator is south.",
       revisit: "The twin [staircase], left for family and right for business, still curling up toward the landing. West to the trophies, east to the piano, north to dinner, up the stairs, or south to the elevator.",
-      escape: "The foyer lights flicker. Somewhere above, glass breaks. The two [staircase] rise into the dark; the right one gleams, its thirteenth step catching the emergency light. The gold elevator waits behind you. The trophy cases glitter off to one side, the piano salon to the other, the long dinner table straight ahead." },
+      escape: [{ if: { flag: "p3" }, text: "The foyer lights flicker. Somewhere above, glass breaks. The two [staircase] rise into the dark; a panel in the right one stands open at the thirteenth step, breathing cold air. The gold elevator waits behind you. The trophy cases glitter off to one side, the piano salon to the other, the long dinner table straight ahead." },
+        "The foyer lights flicker. Somewhere above, glass breaks. The two [staircase] rise into the dark; the right one gleams, and its thirteenth step sits a hair higher than the rest, like it's waiting to be pressed. The gold elevator waits behind you. The trophy cases glitter off to one side, the piano salon to the other, the long dinner table straight ahead."] },
     R3: { first: "Glass cases line the walls, lit like jewelry counters. Inside: a [rifle] engraved with roses, a pistol studded with enough diamonds to buy a small town, and a framed newspaper headline someone has carefully cut the name out of. The foyer is back east.",
       revisit: "The glass cases, the [rifle], the diamonds, the headline with the missing name. East to the foyer.",
       escape: "The cases rattle each time something heavy hits a floor above. The [rifle] stares back at you, useless. The only way out is back toward the staircases." },
     R4: { first: "A white grand [piano] sits in the middle of the room like the only guest who got a chair. Its lid is a sheet of mirror, and it shows you the chandelier, the ceiling fresco, and your own nervous smile. The foyer is west.",
       revisit: "The mirrored [piano], reflecting the chandelier and your nerves. West to the foyer.",
-      escape: "The [piano] waits in the half-light, its mirrored lid reflecting flashing alarm lights. Mama's piano. Mama's song. The way out is back toward the staircases." },
+      escape: [{ if: { flag: "p1" }, text: "The [piano]'s mirrored lid stands open, the hidden tray empty. Mama's piano kept her secret as long as she could. The way out is back toward the staircases." },
+        "The [piano] waits in the half-light, its mirrored lid reflecting flashing alarm lights. Mama's piano. Mama's song. The way out is back toward the staircases."] },
     R5: { first: "A table long enough to seat a jury, set for twenty. Two portraits face each other across it: a stern woman in a rebozo and a sterner woman holding a wooden spoon. Chili, garlic, and slow-cooked tomato hang in the air. The foyer is south.",
       revisit: "The endless table, the two grandmothers watching each other like rival dons. South to the foyer.",
       escape: "Chairs knocked over, a lemur on the table eating grapes out of a silver bowl. It doesn't care about you. The way out is back toward the staircases." },
@@ -72,18 +74,23 @@ const T = {
       escape: "The balcony shakes under a distant thud. Cigar smoke still drifts from the office. The hall of portraits stretches one way; the staircases drop down to the foyer." },
     R7: { first: "A long hall of oil portraits, all of them the Don: the Don on a horse, the Don with a lion, the Don as a saint. The wallpaper is peacock feathers. A guard passes by and nods. The atrium is north, the landing east.",
       revisit: "A hundred painted Don Chavas watch you walk. North to the atrium, east to the landing.",
-      escape: "The painted Dons glare down, and one portrait is hanging crooked, torn by claws. Chlorine drifts in from the fountain behind you. Ahead, the balcony at the top of the stairs." },
+      escape: "The painted Dons glare down, and one portrait is hanging crooked, torn by claws. One end of the hall smells of chlorine; the other opens onto the balcony above the stairs." },
     R8: { first: "A glass roof, tropical plants, and in the center a bronze [hippo] fountain spouting water from its nostrils with great dignity. Its mouth is closed tight. The gallery is south and a chorus of shrieking birds comes from the north.",
       revisit: "The bronze [hippo] spouts water, mouth shut. South to the gallery, north to the birds.",
-      escape: "Water sloshes over the fountain's edge. Lemurs chatter in the palms, pelting the floor with fruit. The bronze [hippo] waits, mouth shut. The screaming aviary is behind you; ahead, the hall of portraits." },
+      escape: [{ if: { flag: "p2" }, text: "Water sloshes over the fountain's edge. Lemurs chatter in the palms, pelting the floor with fruit. The bronze [hippo] gapes, jaw hanging open, very pleased with itself. One way, the peacocks scream; the other, the hall of portraits." },
+        "Water sloshes over the fountain's edge. Lemurs chatter in the palms, pelting the floor with fruit. The bronze [hippo] waits, mouth shut. One way, the peacocks scream; the other, the hall of portraits."] },
     R9: { first: "Leather, mahogany, a humidor the size of a coffin, and a window that looks down on a city he probably owns part of. A framed sign on the desk reads \"LEGITIMATE BUSINESS.\" The landing is west.",
       revisit: "The leather, the cigars, the sign that protests too much. West to the landing.",
       escape: "Papers everywhere, a chair knocked over, the humidor open and empty. Whatever mattered in here, the Don took it. The only way out is back to the balcony." },
     R10: { first: "A glass room full of peacocks that scream like car alarms with feelings. The [aviary] door has a keypad lock, glowing red. The atrium is south, and fresh night air blows in from the terrace north.",
       revisit: "The peacocks, the screaming, the red keypad on the [aviary] door. South to the atrium, north to the terrace.",
-      escape: "The [aviary] keypad is smashed, its door rattling. The peacocks are screaming louder than ever. The fresh air of the terrace is behind you; the chlorine smell of the fountain is ahead." },
-    R11: { first: "A rooftop garden with a view of the whole city. In a tall yard a giraffe chews thoughtfully; beside it, a black jaguar paces behind the [jaguargate]. Then the alarms start. Lemurs pour out of the dark, a roar shakes the glass, and the Don goes pale: \"The accountant. He opened the big one.\" He's gone south with his guards in three seconds flat. You are alone, holding a plaque proposal, with something enormous waking up to the east.",
-      revisit: "Wind, alarms, and the giraffe peering over the [giraffegate]. The jaguar paces behind the [jaguargate]. The broken enclosure gapes to the east; the screaming aviary is behind you." },
+      escape: [{ if: { min: { peacocks: 1 } }, text: "The [aviary] door hangs open, the keypad smashed. Feathers everywhere, and the peacocks are screaming their way through the palace. One doorway breathes fresh night air; the other smells of chlorine." },
+        "The [aviary] keypad is smashed, its door rattling. The peacocks are screaming louder than ever. One doorway breathes fresh night air; the other smells of chlorine."] },
+    R11: { first: "A rooftop garden with a view of the whole city. Behind the [giraffegate] a giraffe chews thoughtfully; beside it, a black jaguar paces behind the [jaguargate]. Then the alarms start. Lemurs pour out of the dark, a roar shakes the glass, and the Don goes pale: \"The accountant. He opened the big one.\" He's gone south with his guards in three seconds flat. You are alone, holding a plaque proposal, with something enormous waking up to the east.",
+      revisit: { opening: "Wind and alarms.",   // ED-02: built from parts by animal state
+        giraffe: ["The giraffe peers over the [giraffegate].", "The [giraffegate] hangs open, the yard empty."],
+        jaguar: ["The jaguar paces behind the [jaguargate].", "The [jaguargate] swings in the wind."],
+        closing: "The broken enclosure gapes past the gates. The screaming aviary leads back inside." } },
     R12: { escape: "Steel bars bent outward like someone opened a bag of chips. A brass sign reads \"BIG TONY — DO NOT FEED.\" Footprints the size of snow shovels lead back past you. The only way out is the terrace." }
   },
   item: {
@@ -94,22 +101,28 @@ const T = {
       take: "You pocket the coin. It's warm from his hand, which somehow makes it worse.",
       use: "You hold out the coin. Nothing here wants it. You put it back before you lose it." },
     ledger: { look: "A fat notebook held shut with rubber bands, full of initials, dates, and payments in neat columns. Two pages list nothing but rubber band purchases. Someone had a lot of cash to wrap.",
-      take: "You tuck the ledger inside your jacket. Secret one." },
+      take: "You tuck the ledger inside your jacket." },
     manifest: { look: "A waterproof tube holding a shipping schedule: dates, ports, and thousands of cans of \"premium chiles\" that clearly have never been near a chile.",
-      take: "The manifest goes into your jacket. Secret two." },
+      take: "The manifest goes into your jacket." },
     photos: { look: "A stack of photos: the Don shaking hands on a yacht with men whose faces would end careers. Someone wrote a date on the back of each one.",
-      take: "You slide the photos into your jacket. Secret three." },
+      take: "You slide the photos into your jacket." },
+    have: "You already have that.",   // BR-02
     evidence: "Tempting, but this is evidence, not a tool. Keep it safe.",
     // scenery: the Script has no examine lines, so these reuse its room sentences
     rifle: "A GOLD RIFLE engraved with roses, in a glass case lit like a jewelry counter.",
     piano: [{ if: { flag: "escape" }, text: "Its mirrored lid reflects flashing alarm lights. Mama's piano. Mama's song." },
       "A white grand PIANO. Its lid is a sheet of mirror, and it shows you the chandelier, the ceiling fresco, and your own nervous smile."],
-    staircase: [{ if: { flag: "escape" }, text: "The two staircases rise into the dark; the right one gleams, its thirteenth step catching the emergency light." },
+    staircase: [{ if: { flag: "p3" }, text: "The two staircases rise into the dark; a panel in the right one stands open at the thirteenth step, breathing cold air." },
+      { if: { flag: "escape" }, text: "The two staircases rise into the dark; the right one gleams, and its thirteenth step sits a hair higher than the rest, like it's waiting to be pressed." },
       "The left staircase is wide and carpeted; the right is narrower, polished to a shine."],
-    hippo: "A bronze HIPPO fountain spouting water from its nostrils with great dignity. Its mouth is closed tight.",
-    aviary: [{ if: { flag: "escape" }, text: "The AVIARY keypad is smashed, its door rattling." }, "The AVIARY door has a keypad lock, glowing red."],
-    giraffegate: [{ if: { min: { giraffe: 1 } }, text: "It's already open. That animal's somebody else's problem now." }, "The giraffe peering over the GIRAFFE GATE."],
-    jaguargate: [{ if: { min: { jaguar: 1 } }, text: "It's already open. That animal's somebody else's problem now." }, "The jaguar paces behind the JAGUAR GATE."]
+    hippo: [{ if: { flag: "p2" }, text: "Pepita's jaw hangs open. Whatever she was guarding, you've got it." },
+      "A bronze HIPPO fountain spouting water from its nostrils with great dignity. Its mouth is closed tight."],
+    aviary: [{ if: { min: { peacocks: 1 } }, text: "The AVIARY door hangs open, the keypad smashed." },
+      { if: { flag: "escape" }, text: "The AVIARY keypad is smashed, its door rattling." }, "The AVIARY door has a keypad lock, glowing red."],
+    giraffegate: [{ if: { min: { giraffe: 1 } }, text: "The GIRAFFE GATE hangs open. The giraffe is somebody else's problem now." },
+      "A tall iron gate. The giraffe leans over it, chewing, curious about you."],
+    jaguargate: [{ if: { min: { jaguar: 1 } }, text: "The JAGUAR GATE hangs open. You're very glad you're not the one chasing it." },
+      "A steel-barred gate. Behind it, the jaguar paces and watches you with yellow eyes."]
   },
   don: {
     look: "Salvatore Bellandi-Reyes, but friends call him Chava. He grips your hand like he's weighing it.",
@@ -129,27 +142,29 @@ const T = {
   },
   nando: { look: "Nando, the size of a vending machine, blocks the way.",
     talk: "Hey. Guests don't wander. Why are you up here?",
-    greet: "A flashlight hits your face. Nando, the size of a vending machine, blocks the way. \"Hey. Guests don't wander. Why are you up here?\"",
+    greet: "A flashlight hits your face. Nando, the size of a vending machine, blocks the way. \"Hey. Guests don't wander. Why are you up here?\" Your legs vote to run. Your brain votes for a good story.",
     after: "Nando is gone, shouting somewhere far away." },
   q1: { prompt: "\"So tell me, Walter. Sunday dinner: my mother's pozole or my nonna's Sunday gravy?\"",
     right: "He laughs and slaps the table. \"Both! Now you sound like family.\"",
-    wrong: "\"You'd choose? In this house?\" He asks again, slower." },
+    wrong: ["\"You'd choose? In this house?\" His smile tightens. He asks again, slower. \"Sunday dinner. Pozole or gravy?\"",
+      "The smile is gone. \"Twice now, Walter. I don't like three.\" He asks one more time. \"Sunday dinner. Pozole or gravy?\""] },
   q2: { prompt: "\"Remind me, what's your bookstore called again?\"",
     right: "\"The Dog-Eared Page. Cute. I like cute.\"",
-    wrong: "\"That's not what you told my people.\" He asks again, not smiling." },
+    wrong: ["\"That's not what you told my people.\" His smile tightens. \"What's the bookstore called?\"",
+      "The smile is gone. \"Twice now, Walter. I don't like three. The bookstore. Its name.\""] },
   strike1: "The Don's smile tightens. \"Hands to yourself, Walter. That's a collector's piece.\"",
   strike2: "The smile is gone. \"Twice now. I don't like three.\"",
   tourBlock: "The Don puts a hand on your shoulder. \"Private, amigo. This way.\"",
   downTour: "\"Leaving before dessert?\" The Don steers you back out.",
   downEmpty: "Your thumb hovers over the button. Two secrets minimum, or this was all for nothing. You're not leaving empty-handed.",
   gateTour: "The keypad blinks red. Locked tight, and the Don is watching.",
-  p1: { solved: "You play the first bars of \"Cielito Lindo,\" badly but with feeling. Something clicks. The mirrored lid rises on its own, and a hidden tray slides out holding a LEDGER bound in rubber bands. Secret one.",
+  p1: { solved: "You play the first bars of \"Cielito Lindo,\" badly but with feeling. Something clicks. The mirrored lid rises on its own, and a hidden tray slides out holding a LEDGER bound in rubber bands. Secrets: {secrets} of 3.",
     wrong: "You bang out a few notes. The piano does nothing, but you're pretty sure Mama Rosa is disappointed. Which song does this piano keep?",
     hint: "He told you whose song this piano keeps. He told you the title over dinner." },
-  p2: { solved: "You flick the coin into Pepita's mouth. The bronze jaw swings open, and a waterproof tube tumbles out into the water. You fish out the SHIPPING MANIFEST. Secret two.",
+  p2: { solved: "You flick the coin into Pepita's mouth. The bronze jaw swings open, and a waterproof tube tumbles out into the water. You fish out the SHIPPING MANIFEST. Secrets: {secrets} of 3.",
     wrong: "You pull at the bronze jaw. Pepita's got a grip like a bank vault. She only opens up for one thing.",
     hint: "The hippo has expensive taste. So did the Don's handshake." },
-  p3: { solved: "You press the thirteenth step. It sinks with a click, and a panel in the staircase slides open, releasing cold air from a narrow passage. Just inside, a shoebox holds the DEAL PHOTOS. Secret three.",
+  p3: { solved: "You press the thirteenth step. It sinks with a click, and a panel in the staircase slides open, releasing cold air from a narrow passage. Just inside, a shoebox holds the DEAL PHOTOS. Secrets: {secrets} of 3.",
     wrong: "You press a step. It's just a step. The Don said which one you can't trust.",
     hint: "Business has one more step than family." },
   alibi: { peacocks: "You punch the smashed keypad. The door swings open and peacocks explode into the palace, screaming like the world is ending. Perfect alibi: PEACOCKS.",
@@ -193,7 +208,11 @@ const exit = (from, dir, to) => {
 };
 const exits = (from, o) => Object.fromEntries(Object.entries(o).map(([d, to]) => [d, exit(from, d, to)]));
 const desc = id => { const t = T.room[ROOM[id]];
-  return [{ if: ESC, text: t.escape }, { if: { flag: `been_${id}` }, text: t.revisit }, t.first]; };
+  return [...[].concat(t.escape).map(v => typeof v === "string" ? { if: ESC, text: v } : { if: { ...ESC, not: { not: v.if } }, text: v.text }),
+    { if: { flag: `been_${id}` }, text: t.revisit }, t.first]; };
+const R11 = T.room.R11.revisit, penned = (a, n) => n ? { min: { [a]: 1 } } : { max: { [a]: 0 } };
+const terrace = [0, 1].flatMap(g => [0, 1].map(j => ({ if: { ...ESC, ...penned("giraffe", g), not: { not: penned("jaguar", j) } },
+  text: [R11.opening, R11.giraffe[g], R11.jaguar[j], R11.closing].join(" ") })));
 
 // ---- Tour strikes (GDD 7): take, touch, open, push, play or use-on a strike object during TOUR
 const STRIKE = { add: { strikes: 1 }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.strike2 }, T.strike1] };
@@ -246,7 +265,7 @@ const G = {
     dining: { name: "Dining Hall", desc: desc("dining"), exits: exits("dining", { south: "foyer" }),             // R5
       on: { Say: [
         { if: { not: { flag: "q1" }, said: "both" }, set: "q1", say: T.q1.right + " " + T.don.after1 },
-        { if: { not: { flag: "q1" } }, ...STRIKE, say: [{ if: { min: { strikes: 3 } }, text: "" }, T.q1.wrong + " " + T.q1.prompt] } ] } },
+        { if: { not: { flag: "q1" } }, ...STRIKE, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.q1.wrong[1] }, T.q1.wrong[0]] } ] } },
     landing: { name: "Upper Landing", desc: desc("landing"), exits: exits("landing", { down: "foyer", west: "gallery", east: "office" }) },   // R6
     gallery: { name: "Gallery Hall", desc: desc("gallery"), exits: exits("gallery", { east: "landing", north: "atrium" }) },                 // R7
     atrium: { name: "Atrium", desc: desc("atrium"), exits: exits("atrium", { south: "gallery", north: "aviary" }),   // R8
@@ -257,12 +276,12 @@ const G = {
     office: { name: "The Don's Office", desc: desc("office"), exits: exits("office", { west: "landing" }),       // R9
       on: { Say: [
         { if: { not: { flag: "q2" }, said: "dog eared page|dog eared" }, set: "q2", give: "coin", say: T.q2.right + " " + T.don.after2 },
-        { if: { not: { flag: "q2" } }, ...STRIKE, say: [{ if: { min: { strikes: 3 } }, text: "" }, T.q2.wrong + " " + T.q2.prompt] } ] } },
+        { if: { not: { flag: "q2" } }, ...STRIKE, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.q2.wrong[1] }, T.q2.wrong[0]] } ] } },
     aviary: { name: "Aviary", desc: desc("aviary"), exits: exits("aviary", { south: "atrium", north: "terrace" }),   // R10
       on: { open: [{ if: { ...TOUR, said: "aviary|door|keypad|cage|peacock|peacocks" }, say: T.gateTour },
         ...release("peacocks", "aviary|door|keypad|cage|peacock|peacocks")] } },
     terrace: { name: "Zoo Terrace", exits: exits("terrace", { south: "aviary", east: "enclosure" }),              // R11
-      desc: [{ if: ESC, text: T.room.R11.revisit }, T.room.R11.first],
+      desc: [...terrace, T.room.R11.first],
       on: { open: [...release("giraffe", "giraffe"), ...release("jaguar", "jaguar")] } },
     enclosure: { name: "Broken Enclosure", desc: T.room.R12.escape, exits: exits("enclosure", { west: "terrace" }) }   // R12
   },
@@ -299,7 +318,7 @@ const G = {
     Take: [
       { if: { said: "card|briefing", has: "card" }, say: T.item.card.take },
       { if: { said: "coin", here: "coin" }, move: { coin: "player" }, say: T.item.coin.take },
-      ...["coin", "ledger", "manifest", "photos"].map(i => ({ if: { said: i === "photos" ? "photos|photo" : i, has: i }, say: T.item[i].take })) ],
+      ...["coin", "ledger", "manifest", "photos"].map(i => ({ if: { said: i === "photos" ? "photos|photo" : i, has: i }, add: { turns: -1 }, say: T.item.have })) ],
     talk: [{ if: { said: "nando|guard", min: { cleared: 1 }, not: { here: "nando" } }, say: T.nando.after }],
     run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: T.guard.run }],
     Say: [alibi("peacocks"), alibi("giraffe"), alibi("jaguar")],

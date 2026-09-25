@@ -194,7 +194,7 @@ test("big-footprint C: Script text: intro, unknown-command rotation, game-over p
     ["You try that", "That doesn't", "Nice try, de", "You try that"]);
   assert.ok(g.lines().some(l => l.startsWith("Exits: ")), "the tour shows compass exits");
   g.type(...TOUR, "s");
-  assert.match(g.lines().at(-1), /fountain is ahead\.$/);
+  assert.match(g.lines().at(-1), /the other smells of chlorine\.$/);
   assert.ok(!g.lines().slice(-3).some(l => l.startsWith("Exits: ")), "the escape names exits by landmark only");
   g.type("s", "s", "look", "say peacocks");
   g.type("look");
@@ -255,4 +255,26 @@ test("BR-01: punctuation in typed input is ignored", () => {
   assert.equal(h.get("S.loc.ledger"), "player");
   h.type("w", "s", "restart!");
   assert.equal(h.get("S.room"), "elevator", "restart works with punctuation");
+});
+
+test("P2s: BR-02 free 'already have', ED-01 escalating quiz lines, ED-02/03 state text, ED-05 secret count", () => {
+  const g = bigfoot();
+  g.type("n", "w", "e", "e", "w", "n", "say pozole");
+  assert.match(g.last(), /His smile tightens/);
+  g.type("say gravy");
+  assert.match(g.last(), /^The smile is gone\. "Twice now, Walter/);
+  const h = bigfoot();
+  h.type(...TOUR.slice(0, 11));
+  const t = h.get("S.count.turns");
+  h.type("take coin");
+  assert.equal(h.last(), "You already have that.");
+  assert.equal(h.get("S.count.turns"), t, "costs no turn");
+  h.type(...TOUR.slice(11), "open jaguar gate", "look");
+  assert.match(h.last(), /giraffe peers over[\s\S]*JAGUAR GATE swings in the wind/);
+  h.type("s", "s", "use coin on hippo");
+  assert.match(h.last(), /Secrets: 1 of 3\.$/);
+  h.type("look");
+  assert.match(h.last(), /gapes, jaw hanging open/);
+  h.type("help");
+  assert.match(h.last(), /In a tight spot: run \(works once\)\./);
 });
