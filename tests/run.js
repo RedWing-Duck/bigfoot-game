@@ -479,7 +479,8 @@ test("Polish C: W2 with and without the run; things examined counts first looks"
   assert.match(talker.last(), /You never ran once/);
   const r = report(talker), [x, y] = r["Things examined"].split(" of ").map(Number);
   assert.equal(x, 2, "manifest and hippo, each counted once");
-  assert.equal(y, Object.keys(talker.get("G.nouns")).length + 7);
+  assert.equal(y, Object.keys(talker.get("G.nouns")).length + 7 - 6, "BG-01: the six escape-only nouns are bonus finds");
+  assert.equal(r["Bonus finds"], "0 of 6");
   assert.match(talker.last(), /Every secret\. Not every corner\./);
 });
 
@@ -676,4 +677,24 @@ test("Playtest round 2 P3s: NB-05 to NB-09", () => {
   assert.deepEqual([a.get("S.count.giraffe"), a.get("S.count.jaguar || 0")], [1, 0]);
   const q = play("n", "w", "e", "e", "w", "n", "say pozole and gravy");
   assert.equal(q.get("S.flags.q1"), true, "NB-08 doesn't split what's said out loud");
+});
+
+test("Playtest round 3 P2s: BG-01 to BG-06", () => {
+  const x = play("x violins", "x speaker");
+  assert.ok(!/Nothing like that/.test(x.lines().slice(-2).join("\n")), "BG-02");
+  const a = play(...TOUR.slice(0, 14), "talk to pepita");
+  assert.match(a.last(), /dignified bronze silence[\s\S]*She likes you\. Maybe\./, "BG-03");
+  const z = toEscape(); z.type("talk to giraffe");
+  assert.equal(z.last(), "She lowers her head, listens politely, and eats a hedge.", "BG-03");
+  const l = toEscape(); l.type("s", "s", "s", "tell nando about the lemurs");
+  assert.match(l.last(), /^CAUGHT[\s\S]*"The lemurs\?" Nando snorts\./, "BG-04");
+  const k = play("n", "threaten don");
+  assert.equal(k.last(), "He laughs, but his eyes don't. \"Walter. We were getting along so well.\"", "BG-05");
+  assert.equal(k.get("S.count.strikes || 0"), 0, "BG-05: provoke is no strike");
+  k.type("kill don");
+  assert.ok(!/penthouse is unimpressed|don't know how/.test(k.last()), "BG-05: kill = hit");
+  const p = toEscape(); p.type("open giraffe gate", "s", "s", "use coin on hippo");
+  const t0 = p.get("S.count.turns"); p.type("use coin on hippo");
+  assert.equal(p.last(), "Pepita's already open, and already empty.", "BG-06");
+  assert.equal(p.get("S.count.turns"), t0, "BG-06: free");
 });

@@ -42,7 +42,9 @@
           report: { lines: [[part, ...], ...], after: TEXT, counted: [ids] }   printed inside every
             ending's text block, after it: a part is TEXT or { list:[TEXT, ...], none:TEXT }; a
             line that comes out empty is skipped. {examined} / {examinable} count the first looks
-            at nouns and the counted ids, out of all of them.
+            at nouns and the counted ids, out of all of them; report.bonus ids count apart, as
+            {bonus} / {bonuses}.
+          "talk <noun>": the noun's talk line, then its category's (NPCs keep the engine's talk).
    Effects: rotate:[TEXT, ...] prints the next line of that list, in turn.
             ladder:[TEXT, ...] prints the next line, then stays on the last (hint ladders).
             note:{ name: value } remembers a value; condition noted:{ name: value } tests it.
@@ -101,12 +103,13 @@
   // rotations, notes, first looks: saved in S.nouns
   const ladder = L => { const k = "ladder:" + JSON.stringify(L), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[Math.min(n, L.length - 1)]; };
   // the run report goes inside the ending's block (G.report)
-  const COUNTED = [...Object.keys(N), ...(G.report?.counted || [])];
+  const BONUS = G.report?.bonus || [], COUNTED = [...Object.keys(N), ...(G.report?.counted || [])].filter(id => !BONUS.includes(id));
   const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
   const end0 = EFFECT.end;
   EFFECT.end = v => {
     if (!G.report) return end0(v);
     S.count.examined = S.nouns.seen.filter(id => COUNTED.includes(id)).length; S.count.examinable = COUNTED.length;
+    S.count.bonus = S.nouns.seen.filter(id => BONUS.includes(id)).length; S.count.bonuses = BONUS.length;
     const rep = G.report.lines.map(l => l.map(part).join("")).filter(Boolean).join("\n");
     end0([{ text: txt(v) + "\n\n" + rep + txt(G.report.after || "") }]);
   };
@@ -158,7 +161,7 @@
   };
   const commands = {};
   for (const v of own) if (!CMDS[v]) commands[v] = () => print("I don't understand that. Type 'help'.");
-  const mine = v => own.has(v) || v === "examine" || v === "go" || v === "wait" || v === "say";
+  const mine = v => own.has(v) || ["examine", "go", "wait", "say", "talk"].includes(v);
   function answer(v, a) {
     noun = null; verb = v;
     if ((v === "ask" || v === "tell") && ask(a)) return true;
@@ -192,6 +195,7 @@
         S.nouns.notes.STRIKE3_BY = thing(target).strike;   // what caused it (for the L1 opener)
         run(G.strike); if (tourFree()) refund(); return true; }
     }
+    if (v === "talk") return h.kind === "noun" ? say(lines(t, "talk", a) || lines(CAT[t.cat], "talk", a) || [null, "Nobody by that name around.", null, "free"]) : undefined;
     if (h.kind !== "noun" && v === "examine") {   // items and NPCs: the engine's own lines (or a first-look close-up)
       const close = G.firstLook?.[h.id] && !S.nouns.seen.includes(h.id);
       react(h.id); return close ? (print(txt(G.firstLook[h.id])), true) : undefined; }

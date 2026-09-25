@@ -1,5 +1,5 @@
 # Bug list — Week 01: THIS PLACE HAS A BIG FOOTPRINT
-Merged from the three QA passes (originals in `qa/`), plus one bug found during the P3 regression pass.
+Merged from the three QA passes and the playtest rounds (originals in `qa/`), plus one bug found during the P3 regression pass.
 **Status: 34 of 34 fixed. Nothing open.** No duplicates were merged: the QA passes had already de-duplicated against each other.
 
 | Bug ID | Sev | Summary | Status | Fix (one line) | Commit |
@@ -76,3 +76,13 @@ Root cause for the suite: the extended coverage test now tries every info and Ti
 | NB-07 | P3 | "push 13" / "push thirteen" found nothing | Fixed | "13" and "thirteen" name the step and solve P3 |
 | NB-08 | P3 | "X and Y" silently dropped Y | Fixed | Does X, then "One thing at a time, detective." (not for say / tell / ask, where "and" is part of what's said) |
 | NB-09 | P3 | "tell don i love the marble" got the unknown-topic line | Fixed | Compliment words = the flatter line; new house / marble / palace topic (QA text) |
+
+## Polish build: playtest QA round 3, Bartle graph (`qa/PLAYTEST_QA_round3_bartle_week01.txt`)
+| Bug ID | Sev | Summary | Status | Fix (one line) |
+|---|---|---|---|---|
+| BG-01 | P2 | The "every corner" W2 tease couldn't be earned | Fixed | The six escape-only nouns (R5 lemur, R9 papers, R12's four) count as "Bonus finds: n of 6"; "Things examined" and the tease use the main total (100) |
+| BG-02 | P2 | Nouns read in examine and dialogue text had no description | Fixed | QA's aliases, to the entry that mentions each noun |
+| BG-03 | P2 | Talking to an animal got "Nobody by that name around." | Fixed | ANIMAL talk default plus QA's lines for Pepita (the Don adds his line on the tour), the peacocks, giraffe, jaguar and lemurs; free, no strike |
+| BG-04 | P2 | Lemurs or Big Tony as an alibi got "No animal. No noise." | Fixed | Still CAUGHT, with QA's openers for lemurs, Tony / Bigfoot and the hippo / Pepita |
+| BG-05 | P2 | Hostile verbs got the confused line | Fixed | kill / murder / strangle / stab = hit, smash / slam / tear / burn / wreck / destroy / rip = break, trip = push, pickpocket / rob / swipe = steal (strike rules apply); new `provoke` (threaten, insult, mock, spit, sneer) with the Don's S0-S2 lines, no strike; the glare line elsewhere; the pozole line for throwing food |
+| BG-06 | P2 | Using the coin on an open hippo said she was still shut, and cost a turn | Fixed | "Pepita's already open, and already empty." (free) |

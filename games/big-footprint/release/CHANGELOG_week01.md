@@ -2,6 +2,15 @@
 Build: `dist/big-footprint.html` (single file, runs offline). Branch `claude/penthouse-heist-game-o7k6w5`.
 Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors.
 
+## Playtest round 3 fixes (polish build, Bartle graph)
+- **P2s:** BG-01 to BG-06.
+  - "Things examined" counts only the nouns a W2 route can reach (100), so the "every corner" tease can be earned. The six escape-only nouns are reported as "Bonus finds: n of 6".
+  - About 40 nouns read in examine and dialogue text can be examined now (aliases to the line that mentions them).
+  - Talking to animals gets in-voice lines.
+  - Lemurs, Big Tony and Pepita at a checkpoint still get you CAUGHT, but with honest openers.
+  - Hostile verbs map onto hit, break, push and steal. The new `provoke` verb gets the Don's lines (no strike). Throwing food gets the pozole line.
+  - Using the coin on Pepita after she's open is free and says so.
+
 ## Playtest round 2 fixes (polish build)
 - **P2s:** NB-01 to NB-04.
   - A bare `say` at a checkpoint is a free repeat.
@@ -67,8 +76,8 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 - **A: Skeleton.** 12 rooms and exits; movement, look, help, quit.
 
 ## Known issues
-- **P1/P2:** none known. The polish build hasn't had its QA passes yet (see `rev3/QA_FOCUS_week01_polish.pdf`).
-- **Tests:** 43 tests. All 19 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, and round 2's P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **P1/P2:** none known. Round 3's P3s (BG-07 to BG-13) are open, awaiting the go.
+- **Tests:** 44 tests. All 20 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|

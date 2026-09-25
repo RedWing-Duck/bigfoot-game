@@ -9,7 +9,7 @@ Everything for review, saved together with the build.
 | [`WALKTHROUGH_week01.txt`](WALKTHROUGH_week01.txt) | Verified walkthrough (W1 + W2 branch); automated in `tests/run.js` |
 | [`BUGS_week01.md`](BUGS_week01.md) | Merged bug list with status (34/34 fixed) |
 | [`CHANGELOG_week01.md`](CHANGELOG_week01.md) | Changelog and known issues |
-| [`qa/`](qa/) | The three original QA reports |
+| [`qa/`](qa/) | The three original QA reports and the three playtest QA rounds |
 | [`original/`](original/) | The Script as delivered (rev 1), for diffing |
 | [`rev3/`](rev3/) | The 10/10 polish inputs: GDD rev 3, Script rev 3 additions, build brief, QA focus |
 
