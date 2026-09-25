@@ -96,10 +96,12 @@ const T = {
   item: {
     card: { look: "Your cover, in your own handwriting. Name: Walter Pryce. Business: The Dog-Eared Page, a bookstore planned for the empty lot next door. Offer: a brass plaque reading \"The Bellandi-Reyes Reading Room.\" At the bottom: \"Smile. Don't touch anything.\"",
       take: "You already have it. It's the only thing keeping you from being a very short story.",
-      use: "That won't help. The card is for reading, not for handing to anyone." },
+      use: "That won't help. The card is for reading, not for handing to anyone.",
+      q2: "\"Smile. Don't touch anything.\" You smiled. He liked the name. So far, so good." },   // Script rev 3 [I1] IF Q2
     coin: { look: "A heavy gold coin with an eagle on one side and a winged figure on the other. The Don called it your \"first dividend.\"",
       take: "You pocket the coin. It's warm from his hand, which somehow makes it worse.",
-      use: "You hold out the coin. Nothing here wants it. You put it back before you lose it." },
+      use: "You hold out the coin. Nothing here wants it. You put it back before you lose it.",
+      held: "The eagle, the winged figure, and the weight of it in your palm. In this house, gold opens things." },   // Script rev 3 [I2] ESCAPE, COIN_HELD
     ledger: { look: "A fat notebook held shut with rubber bands, full of initials, dates, and payments in neat columns. Two pages list nothing but rubber band purchases. Someone had a lot of cash to wrap.",
       take: "You tuck the ledger inside your jacket." },
     manifest: { look: "A waterproof tube holding a shipping schedule: dates, ports, and thousands of cans of \"premium chiles\" that clearly have never been near a chile.",
@@ -196,10 +198,12 @@ const T = {
     right: "\"The Dog-Eared Page. Cute. I like cute.\"",
     wrong: ["\"That's not what you told my people.\" His smile tightens. \"What's the bookstore called?\"",
       "The smile is gone. \"Twice now, Walter. I don't like three. The bookstore. Its name.\""] },
+  strikePepita: "The Don's smile tightens. \"Those are Pepita's, Walter. Hands to yourself.\"",   // PT-11
   strike1: "The Don's smile tightens. \"Hands to yourself, Walter. That's a collector's piece.\"",
   strike2: "The smile is gone. \"Twice now. I don't like three.\"",
   tourBlock: "The Don puts a hand on your shoulder. \"Private, amigo. This way.\"",
   downTour: "\"Leaving before dessert?\" The Don steers you back out.",
+  downOne: "Your thumb hovers over the button. One secret isn't a case. It's a rumor. Go get another.",   // PT-14
   downEmpty: "Your thumb hovers over the button. Two secrets minimum, or this was all for nothing. You're not leaving empty-handed.",
   gateTour: "The keypad blinks red. Locked tight, and the Don is watching.",
   p1: { solved: "You play the first bars of \"Cielito Lindo,\" badly but with feeling. Something clicks. The mirrored lid rises on its own, and a hidden tray slides out holding a LEDGER bound in rubber bands. Secrets: {secrets} of 3.",
@@ -292,8 +296,8 @@ const exits = (from, o) => Object.fromEntries(Object.entries(o).map(([d, to]) =>
 // Script B [ROOM.Rn.escrevisit]: ESC_REVISIT (this room already seen during ESCAPE)
 const AGAIN = {   // Script B [ROOM.Rn.escrevisit]
   elevator: [[null, "Back in the gold box. The doors wait. So does the button."]],
-  foyer: [["!P3", "The foyer again: the elevator behind you, the stairs rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The thirteenth step still sits a hair too high."],
-    ["P3", "The foyer again: the elevator behind you, the stairs rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The panel under the stairs is still breathing cold air."]],
+  foyer: [["!P3", "The foyer again: the elevator behind you, the [staircase] rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The thirteenth step still sits a hair too high."],
+    ["P3", "The foyer again: the elevator behind you, the [staircase] rising into the dark, the trophies to one side, the piano to the other, the long table ahead. The panel under the stairs is still breathing cold air."]],
   trophy: [[null, "The trophy cases again, rattling. The way out is back toward the staircases."]],
   salon: [["!P1", "Mama's piano again, in the flashing light. The way out is back toward the staircases."], ["P1", "The open piano and its empty tray. The way out is back toward the staircases."]],
   dining: [[null, "The wrecked dinner again. The lemur hasn't moved and has no plans to. The way out is back toward the staircases."]],
@@ -314,7 +318,8 @@ const terrace = [0, 1].flatMap(g => [0, 1].map(j => ({ if: { ...ESC, ...penned("
   text: [R11.opening, R11.giraffe[g], R11.jaguar[j], R11.closing].join(" ") })));
 
 // ---- Tour strikes (GDD 7): take, touch, open, push, play or use-on a strike object during TOUR
-const STRIKE = { add: { strikes: 1 }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.strike2 }, T.strike1] };
+const STRIKE = { add: { strikes: 1 }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.strike2 },
+  { if: { noted: { STRIKE3_BY: "HIPPO" } }, text: T.strikePepita }, T.strike1] };   // PT-11
 const strikes = (words, by, verbs = ["use"]) =>   // use-on a strike object; other strike verbs: nouns add-on (GDD 12.1 D1)
  
   Object.fromEntries(verbs.map(v => [v, [{ if: { ...TOUR, said: words }, ...STRIKE, note: { STRIKE3_BY: by } }]]));
@@ -361,7 +366,7 @@ const NOUNS = {
       touch: [["TOUR", "The Don watches you not slide down it."]] },
     "R2.leftstairs": { at: "foyer", cat: "FIXTURE", strike: "STEP", words: ["left staircase", "left stairs", "left side", "carpet", "red carpet", "carpeted stairs", "family stairs", "family side", "family staircase", "twelve steps"],
       examine: [["TOUR", "Wide, carpeted in deep red, and lined with small gold frames of family moments. Twelve steps. You count them twice, because the Don is watching you count."], ["ESCAPE", "The family side. Twelve steps of red carpet, and every frame on the wall is rattling."]] },
-    "R2.frames": { at: "foyer", cat: "ART", words: ["frames", "frame", "snapshots", "family pictures", "pictures", "christening", "wedding", "weddings", "baby", "quinceanera"],
+    "R2.frames": { at: "foyer", cat: "ART", words: ["frames", "frame", "snapshots", "family pictures", "family photos", "family photo", "pictures", "christening", "wedding", "weddings", "baby", "quinceanera"],
       examine: [["TOUR", "Christenings, weddings, a quinceañera, a baby in a tiny tuxedo. In every one, the Don is either handing someone an envelope or holding someone's baby."], ["ESCAPE", "One frame has fallen and cracked straight across a wedding. Someone is going to hear about that."]] },
     "R2.rightstairs": { at: "foyer", cat: "FIXTURE", strike: "STEP", words: ["right staircase", "right stairs", "right side", "business stairs", "business side", "business staircase", "narrow stairs", "thirteen steps"],
       examine: [["TOUR", "Narrower, bare marble, polished to a shine, and no frames on the wall at all. Business doesn't keep pictures. Thirteen steps."], ["ESCAPE", "Thirteen steps, and one of them is wrong. Standing close, you can see it: the thirteenth sits a hair proud of the rest, with a thin dark seam around its edge."], ["P3", "The panel under the thirteenth step hangs open, breathing cold air up at you."]] },
@@ -416,7 +421,7 @@ const NOUNS = {
       Take: [["P1", "You leave it. Something tells you the Don counts those.", "rubber band"]] },
     "R5.table": { at: "dining", cat: "FURNITURE", words: ["table", "dining table", "long table", "dinner table"],
       examine: [["TOUR", "Twenty place settings, each with a handwritten place card. Yours says \"Mr. Pryce (Guest)\" in better handwriting than yours. At the far end, one chair has no card at all, and a silver spoon lies beside it, bent double."], ["ESCAPE", "Chairs knocked flat, silver everywhere, and a lemur holding court in the middle of it all. The empty chair at the end is the only one still standing."]] },
-    "R5.placecards": { at: "dining", cat: "ART", words: ["place card", "place cards", "name card", "name cards", "seating", "seating chart", "father tomas"],
+    "R5.placecards": { at: "dining", cat: "ART", words: ["place card", "place cards", "cards", "name card", "name cards", "seating", "seating chart", "father tomas"],
       examine: [["TOUR", "Every name in the same looping hand: Mama Rosa's seat at one end, Nonna's at the other, cousins, uncles, a Father Tomás. Yours is squeezed in beside the Don's, which is either an honor or a leash."], ["ESCAPE", "Scattered across the floor. A lemur is eating Father Tomás."]] },
     "R5.emptychair": { at: "dining", cat: "FURNITURE", words: ["empty chair", "end chair", "chair end", "missing card", "accountant's chair", "last chair"],
       examine: [["TOUR", "No card, no plate, just the bent spoon. The Don sees you looking. \"My accountant's seat. He's on a leave of absence.\" He smiles without showing any teeth."], ["ESCAPE", "Still standing, still empty. Now you know how the accountant spent his leave of absence: with a set of keys and a grudge."]] },
@@ -636,6 +641,8 @@ const ENDINGS = {
   })
 };
 
+const DOWN_EMPTY = [{ if: { min: { secrets: 1 } }, text: T.downOne }, T.downEmpty];   // PT-14
+
 const G = {
   title: "THIS PLACE HAS A BIG FOOTPRINT",
   intro: T.intro,
@@ -668,11 +675,11 @@ const G = {
     elevator: { name: "Private Elevator", desc: desc("elevator"), exits: exits("elevator", { north: "foyer" }),   // R1
       on: { go: [
         { if: { said: "down", ...TOUR }, say: T.downTour },
-        { if: { said: "down", max: { secrets: 1 } }, say: T.downEmpty },
+        { if: { said: "down", max: { secrets: 1 } }, say: DOWN_EMPTY },
         { if: { said: "down" }, set: "won" } ],
         push: [   // GDD 12.6: "push button" / "press button" / "push lobby" = "down"
           { if: { said: "button|buttons|lobby", ...TOUR }, say: NOUNS["R1.button"].push[0][1] },
-          { if: { said: "button|buttons|lobby", max: { secrets: 1 } }, say: T.downEmpty },
+          { if: { said: "button|buttons|lobby", max: { secrets: 1 } }, say: DOWN_EMPTY },
           { if: { said: "button|buttons|lobby" }, set: "won" } ] } },
     foyer: { name: "Grand Foyer", desc: desc("foyer"), ways: { stairs: "up", staircase: "up", staircases: "up" },                                                           // R2
       exits: exits("foyer", { south: "elevator", west: "trophy", east: "salon", north: "dining", up: "landing" }),
@@ -722,8 +729,8 @@ const G = {
   },
 
   items: {
-    card: { name: "BRIEFING CARD", cat: "OWN", at: "player", aliases: ["briefing"], desc: T.item.card.look },                  // I1
-    coin: { name: "GOLD COIN", cat: "OWN", desc: T.item.coin.look },                                                          // I2
+    card: { name: "BRIEFING CARD", cat: "OWN", at: "player", aliases: ["briefing"], desc: [{ if: { flag: "q2" }, text: T.item.card.look.replace(/"Smile\. Don't touch anything\."$/, T.item.card.q2) }, T.item.card.look] },   // PT-10: the card's last line and the Script's IF Q2 line share their quote                  // I1
+    coin: { name: "GOLD COIN", cat: "OWN", desc: [{ if: { key: "ESCAPE&COIN_HELD" }, text: T.item.coin.held }, T.item.coin.look] },   // PT-10                                                          // I2
     ledger: { name: "LEDGER", cat: "OWN", desc: T.item.ledger.look },                                                         // I3
     manifest: { name: "SHIPPING MANIFEST", cat: "OWN", desc: T.item.manifest.look },                                         // I4
     photos: { name: "DEAL PHOTOS", cat: "OWN", aliases: ["photo"], desc: T.item.photos.look },                              // I5
@@ -948,9 +955,9 @@ G.alone = {   // Script C2 "(no noun)" lines; SMELL / LISTEN try the room's own 
   listen: [["TOUR", "Violins somewhere, footsteps on marble, and the Don breathing through his nose."]],   // PT-01 (QA text; ESCAPE: the band line)
   ...Object.fromEntries(["Take", "touch", "push", "pull", "open", "close"].map(v => [v, [[null, v[0].toUpperCase() + v.slice(1).toLowerCase() + " what?", null, "free"]]]))   // no noun: a free prompt
 };
-ROOM_VERBS.elevator = { listen: NOUNS["R1.elevator"].listen };   // PT-01
-ROOM_VERBS.foyer = { listen: NOUNS["R2.marble"].listen };
-ROOM_VERBS.trophy = { listen: NOUNS["R3.cases"].listen };
+ROOM_VERBS.elevator = { listen: NOUNS["R1.elevator"].listen, smell: NOUNS["R1.elevator"].smell };   // PT-01, PT-07
+ROOM_VERBS.foyer = { listen: NOUNS["R2.marble"].listen, smell: NOUNS["R2.marble"].smell };
+ROOM_VERBS.trophy = { listen: NOUNS["R3.cases"].listen, smell: NOUNS["R3.cases"].smell };
 for (const r in ROOM_VERBS) G.rooms[r].verbs = ROOM_VERBS[r];
 // Script B [ROOM.adjacent]: room-name words, and the ESCAPE revisit line shown from next door
 const WORDS = { elevator: ["elevator"], foyer: ["foyer"], trophy: ["trophy room", "trophies"], salon: ["salon", "music salon", "piano room"],
@@ -1065,6 +1072,15 @@ G.report = {
       { if: ENDED("W2"), text: "Every secret, every corner. The Don never stood a chance." }, ""]]],
   after: [{ if: { any: [ENDED("L1"), ENDED("L2"), ENDED("L3")] }, text: T.retry }, ""]
 };
+
+// ---- Playtest P3s
+for (const c of ["FIXTURE", "FURNITURE", "ART"]) G.categories[c].eat = [[null, "You're hungry, not desperate."]];   // PT-12
+// PT-15: animal marks keep the base line, then add the mark; solved states still replace
+const MARKS = { "R2.banisters": "OUT_GIRAFFE", "R8.plants": "OUT_GIRAFFE", "R7.crooked": "OUT_JAGUAR", "R7.wallpaper": "OUT_PEACOCKS", "R11.garden": "OUT_JAGUAR" };
+for (const [id, k] of Object.entries(MARKS)) {
+  const L = NOUNS[id].examine, base = L.find(l => l[0] === "ESCAPE")[1], mark = L.find(l => l[0] === k);
+  mark[1] = base + " " + mark[1];
+}
 </script>
 
 <script>

@@ -607,3 +607,29 @@ test("Playtest P2s: PT-01 to PT-06", () => {
   const w = toEscape(); for (let i = 0; i < 12; i++) w.type("dance");
   assert.equal(w.last(), "Somewhere behind you, a thud rattles the chandeliers.", "PT-05: no feedback or band on a warning turn");
 });
+
+test("Playtest P3s: PT-07 to PT-15", () => {
+  const g = bigfoot();
+  g.type("smell");
+  assert.equal(g.last(), "Cologne, brass polish, and your own nerves.", "PT-07");
+  g.type("n", "x family photos");
+  assert.match(g.last(), /^Christenings, weddings/, "PT-09");
+  g.type("w", "e", "e", "w", "n", "x cards");
+  assert.ok(g.lines().some(l => l.startsWith("Every name in the same looping hand")), "PT-08");
+  g.type("say both", "s", "u", "e", "say dog-eared page", "x card");
+  assert.match(g.last(), /At the bottom: "Smile\. Don't touch anything\." You smiled\. He liked the name\. So far, so good\.$/, "PT-10");
+  g.type("w", "w", "n", "take coins");
+  assert.equal(g.last(), "The Don's smile tightens. \"Those are Pepita's, Walter. Hands to yourself.\"", "PT-11");
+  g.type("n", "n", "x coin");
+  assert.match(g.last(), /^The eagle, the winged figure/, "PT-10: COIN_HELD in ESCAPE");
+  g.type("open jaguar gate", "x garden");
+  assert.match(g.last(), /^Clipped hedges[\s\S]*A single paw print/, "PT-15: base line, then the mark");
+  g.type("x jaguar");
+  assert.match(g.last(), /^Gone\./, "PT-15: a state change still replaces");
+  g.type("e", "eat banana peels");
+  assert.ok(g.lines().includes("You're hungry, not desperate."), "PT-12");
+  const w = toEscape(); w.type("open giraffe gate", "s", "s", "use coin on hippo", "s", "run", "e", "d", "say giraffe", "s", "d");
+  assert.equal(w.last(), "Your thumb hovers over the button. One secret isn't a case. It's a rumor. Go get another.", "PT-14");
+  w.type("n", "push 13th step", "e", "w");
+  assert.ok(!w.lines().slice(-6).some(l => l.startsWith("You see:")), "PT-13: no engine item list under the revisit");
+});

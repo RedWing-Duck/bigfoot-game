@@ -10,7 +10,15 @@ Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there
   - At most two extra lines follow a room's text during the escape, and the clock warnings print without a band line or turn feedback on the same turn.
   - `x stairs` works on the landing.
   - New: an extended coverage test (bare verbs, social verbs, prepositions, nouns from other rooms).
-- **P3s:** PT-07 to PT-15, pending.
+- **P3s:** PT-07 to PT-15.
+  - Bare `smell` has room lines in R1-R3.
+  - New accepted words: "cards" and "family photos".
+  - The card and coin state lines are in.
+  - Pepita has her own first-strike line.
+  - `eat` works on scenery.
+  - No stray "You see: staircases" line under the foyer's escape revisit.
+  - The elevator has a line for holding only one secret.
+  - Animal marks add to a description instead of replacing it.
 
 ## 10/10 polish pass (GDD rev 3, Script rev 3 additions)
 Depth only. The map, items, puzzles, solutions, win and lose rules and clock values are unchanged. The verified walkthrough still wins with 7 turns to spare, and the W2 route with 4, with the same clock value at every step.
@@ -47,12 +55,12 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 
 ## Known issues
 - **P1/P2:** none known. The polish build hasn't had its QA passes yet (see `rev3/QA_FOCUS_week01_polish.pdf`).
-- **Tests:** 40 tests. All 16 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage and the P2 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Tests:** 41 tests. All 17 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, and the P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|
   | W1 critical path, W2 piano detour | The run report now follows the ending's last line |
-  | Puzzles: wrong attempts | Turn feedback follows the wrong-attempt line |
+  | Puzzles: wrong attempts | Turn feedback follows the wrong-attempt line; the one-secret elevator line (PT-14) |
   | Script text (C) | `xyzzy` has its own reply; a clock-band line follows the aviary text |
   | Regression walkthrough W1 and W2 | Step 24: Nando's "You. Again." greeting; step 25: the foyer giraffe alibi line; the run report |
   | P2 fixes | A clock-band line on the terrace; the atrium's escape revisit text |

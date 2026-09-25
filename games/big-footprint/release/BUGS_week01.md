@@ -52,6 +52,14 @@ Merged from the three QA passes (originals in `qa/`), plus one bug found during 
 | PT-04 | P2 | A noun from another room got a category reply and cost a turn | Fixed | Cause: R12's bars list "gate", so "jaguar gate" matched it. Now a longer phrase naming something elsewhere gets the free not-here line. Also removed the rev 2 tour-gate reply, which could only misfire (the gates are on the terrace) |
 | PT-05 | P2 | Extra lines pile up in ESCAPE | Fixed | At most 2 extra lines per room (Nando's greeting counts; checkpoint lines, then marks, then the band); no band or feedback on a warning turn |
 | PT-06 | P2 | `x stairs` on the landing found nothing | Fixed | "stairs" examines there; `climb stairs` still walks down |
-| PT-07 to PT-15 | P3 | | Open | Waiting for "go on P3s" |
+| PT-07 | P3 | Bare `smell` generic in R1-R3 | Fixed | Room smell lines from the R1-R3 nouns |
+| PT-08 | P3 | "x cards" found nothing | Fixed | "cards" added to the place cards |
+| PT-09 | P3 | "x family photos" found nothing | Fixed | "family photos" / "family photo" added to the frames |
+| PT-10 | P3 | The card's IF Q2 line was missing | Fixed | Added; it shares the card's last quote so it isn't printed twice. Also added the missing coin line (ESCAPE, COIN_HELD) |
+| PT-11 | P3 | "collector's piece" strike line for the fountain coins | Fixed | QA's Pepita line replaces strike 1 on the hippo and fountain |
+| PT-12 | P3 | `eat` on scenery: "Nothing happens" | Fixed | "You're hungry, not desperate." for FIXTURE, FURNITURE, ART |
+| PT-13 | P3 | "You see: staircases" under the foyer's escape revisit | Fixed | The revisit text tags [staircase] |
+| PT-14 | P3 | "Empty-handed" with one secret | Fixed | QA's one-secret line for "down" and "push button" |
+| PT-15 | P3 | Animal marks replaced the whole description | Fixed | Base line + mark for the banister, palms, torn portrait, wallpaper, garden; state changes (giraffe, jaguar, peacocks, aviary door, feathers, vase) still replace |
 
 Root cause for the suite: the extended coverage test now tries every info and Tier 1 verb with no noun in every room and both phases, the Tier 2 verbs on the NPCs present (Nando included, free at a checkpoint), prepositional forms, every noun named from another room (free not-here line), and "look at" + every WORDS entry.
