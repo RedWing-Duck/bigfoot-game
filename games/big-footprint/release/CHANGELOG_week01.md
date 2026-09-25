@@ -2,6 +2,13 @@
 Build: `dist/big-footprint.html` (single file, runs offline). Branch `claude/penthouse-heist-game-o7k6w5`.
 Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors.
 
+## Playtest round 4 fixes (polish build, fresh phrasings)
+- **P2s:** F-01 to F-03.
+  - Look closer: examining any word the room just showed you answers with the sentence it came from ("You look closer. ..."), free. This closes the missing-noun class for good; a new test examines every word read in every room, two levels deep (3,616 commands).
+  - greet, chat and introduce talk; whisper, mutter, reply, answer and respond say.
+  - Second-wave hostile verbs: slap, headbutt, bite and the rest hit; vandalize and knock over break; set fire, ignite and light burn; poison; scream at provokes.
+  - Fixed a crash when examining the terrace from the aviary on the tour.
+
 ## Playtest round 3 fixes (polish build, Bartle graph)
 - **P2s:** BG-01 to BG-06.
   - "Things examined" counts only the nouns a W2 route can reach (100), so the "every corner" tease can be earned. The six escape-only nouns are reported as "Bonus finds: n of 6".
@@ -84,8 +91,8 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 - **A: Skeleton.** 12 rooms and exits; movement, look, help, quit.
 
 ## Known issues
-- **Bugs:** none open. All three playtest rounds are fixed.
-- **Tests:** 45 tests. All 21 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Bugs:** round 4's P3s (F-04 to F-09) are open, awaiting the go.
+- **Tests:** 47 tests. All 23 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, round 2's P2 and P3 checks, and round 3's P2 and P3 checks, round 4's look-closer coverage (3,616 commands) and P2 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|
@@ -112,6 +119,7 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 - Engine unchanged. Add-ons, in load order:
   - `restart`: RESTART works after an ending.
   - `verbs`:
+    - two-word verbs (`phrasal`: "knock over", "scream at");
     - room and global replies for any verb;
     - the `said`, `any` and `only` conditions and the `line` effect;
     - input cleanup;

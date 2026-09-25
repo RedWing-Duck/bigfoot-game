@@ -430,7 +430,7 @@ const NOUNS = {
       smell: [[null, "Cedar, cream, and money on fire."]] },
     "R6.vase": { at: "landing", cat: "ART", words: ["vase", "lilies", "flowers", "stand", "pedestal"],
       examine: [["TOUR", "A tall vase of white lilies on a marble pedestal, placed exactly where every guest has to walk around it. Even the flowers here make you wait."], ["ESCAPE", "Still standing. Barely. It rocks on its pedestal every time something heavy hits the floor."], ["OUT_JAGUAR", "Knocked flat, lilies everywhere, water soaking into the carpet. Something fast came through here, low to the ground."]] },
-    "R7.portraits": { at: "gallery", cat: "ART", words: ["portraits", "portrait", "paintings", "painting", "dons", "oil portraits"],
+    "R7.portraits": { at: "gallery", cat: "ART", words: ["portraits", "portrait", "paintings", "painting", "dons", "oil portraits", "canvas", "canvases"],   // + F-01
       examine: [["TOUR", "A hundred Don Chavas in gold frames, every one painted by someone who was clearly told to make him taller. Three stand out: a horse, a lion, a saint."], ["ESCAPE", "A hundred painted Dons glaring down at the one man who got away with their secrets. One hangs crooked, slashed by claws."]] },
     "R7.horse": { at: "gallery", cat: "ART", words: ["horse", "horse portrait", "don horse", "rider", "stallion", "sword"],
       examine: [["TOUR", "The Don on a rearing white stallion, sword raised, in a battle that never happened. The horse is real, a plaque says. It lives on a ranch now and does not know it's famous."], ["ESCAPE", "The Don on his stallion, charging nowhere. He doesn't look so brave in red light."]] },
@@ -629,11 +629,15 @@ const G = {
     check: "examine", inspect: "examine", study: "examine", snatch: "take", pick: "take", catch: "take",   // GDD 12.3
     kick: "push", shove: "push", step: "push", stand: "push", lean: "sit", attack: "hit", punch: "hit", hum: "sing",
     curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter",
-    kill: "hit", murder: "hit", strangle: "hit", stab: "hit", smash: "break", slam: "break", tear: "break", burn: "break", wreck: "break",   // BG-05
+    kill: "hit", murder: "hit", strangle: "hit", stab: "hit", smash: "break", slam: "break", tear: "break", wreck: "break",   // BG-05
     destroy: "break", rip: "break", trip: "push", pickpocket: "steal", rob: "steal", swipe: "steal",
     threaten: "provoke", insult: "provoke", mock: "provoke", spit: "provoke", sneer: "provoke", show: "use",   // PT-02: show works like give
     shout: "say", yell: "say", scream: "say", holler: "say", return: "back", stuck: "hint", what: "hint", load: "save", undo: "save", restore: "save",   // NB-03, NB-04
-    directions: "exits" },   // verbs add-on
+    directions: "exits",
+    greet: "talk", chat: "talk", introduce: "talk", whisper: "say", mutter: "say", reply: "say", answer: "say", respond: "say",   // F-02
+    slap: "hit", headbutt: "hit", bite: "hit", elbow: "hit", choke: "hit", vandalize: "break", deface: "break", trash: "break",   // F-03
+    ignite: "burn", light: "burn" },   // verbs add-on
+  phrasal: { "knock over": "break", "set fire": "burn", "scream at": "provoke", "yell at": "provoke", "shout at": "provoke", "holler at": "provoke" },   // F-03
   free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen", "where", "exits", "ways", "map", "save"],   // GDD 12.1 D2; NB-04
   fallback: T.fallback,
   messages: {   // messages add-on: the engine's own lines, reworded
@@ -754,6 +758,7 @@ const G = {
       ...["coin", "ledger", "manifest", "photos"].map(i => ({ if: { said: i === "photos" ? "photos|photo" : i, has: i }, add: { turns: -1 }, say: T.item.have })) ],
     talk: [
       { if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat },   // GDD 12.1 D3: free, the checkpoint stays open
+      { if: { here: "don", said: "myself|me" }, say: "He smiles. \"I know who you are, Walter. I checked.\"" },   // F-02 (QA text): "introduce myself"
       { if: { here: "don", any: [{ said: "" }, { said: "don|chava|salvatore" }] }, say: [   // D1: by stop; a pending question first (BR-09)
         ...Object.entries(QUIZ).map(([r, [q, prompt]]) => ({ if: { in: r, not: { flag: q } }, text: prompt })),
         { if: { key: "STRIKES=2" }, text: T.don.talk }, { if: { key: "STRIKES=1" }, text: T.don.talkStop.strike1 },
@@ -840,9 +845,9 @@ G.keys = {   // GDD 12.4: the only states Script lines may name
   "SECRETS=2": { min: { secrets: 2 }, max: { secrets: 2 } }, "SECRETS=3": { min: { secrets: 3 } },
   "SECRETS>=1": { min: { secrets: 1 } }   // Script's R12 footprints and L3 tail: SECRETS=1, 2 or 3
 };
-G.groups = { touch: ["handle"], push: ["handle"], pull: ["handle"], use: ["feed"] };   // C1: HANDLE = touch, push, pull, kick, move
+G.groups = { touch: ["handle"], push: ["handle"], pull: ["handle"], use: ["feed"], burn: ["break"] };   // + F-03: burn falls back to break   // C1: HANDLE = touch, push, pull, kick, move
 G.strike = STRIKE;
-G.strikeVerbs = ["take", "touch", "open", "push", "play", "pull", "sit", "climb", "break", "hit", "steal"];   // GDD 12.1 D1
+G.strikeVerbs = ["take", "touch", "open", "push", "play", "pull", "sit", "climb", "break", "burn", "hit", "steal"];   // GDD 12.1 D1
 G.strikeWith = ["use", "drop"];   // use-on: a strike object named anywhere in the line
 G.tourFree = true;   // new verbs on the tour don't advance the turn counter (the clock is off anyway)
 const OWN_SECRETS = "ledger|manifest|photos|photo";
@@ -1097,6 +1102,15 @@ Object.assign(G.on, {
   help: G.on.hint.map(e => ({ ...e, if: { ...e.if, said: "me" } }))   // "help me" = the next hint
 });
 G.on.ways = G.on.exits;   // "ways out"
+
+// ---- Playtest round 4 (F-xx)
+const NO_FIRE = [[null, "No matches, no lighter, and no plan for what happens after."]];   // F-03 (QA text)
+G.categories.FIXTURE.burn = NO_FIRE; G.categories.FURNITURE.burn = NO_FIRE;
+G.categories.FOOD.break = [[null, "Spill Mama's pozole? You'd be out of the house before it hit the floor."]];   // F-03 "knock over pots" (coder text)
+G.anywhere.poison = [[null, "You didn't bring anything but a plaque proposal and bad intentions. Mostly the plaque."]];
+G.lookCloser = {   // F-01: examine a word the room's text used; the room part (the rest is the nouns add-on's)
+  prefix: "You look closer. ",
+  room: r => test(ESC) ? [txt(G.rooms[r].desc)] : [T.room[ROOM[r]].first, T.room[ROOM[r]].revisit].filter(t => typeof t === "string") };
 
 // ---- Playtest round 3 (BG-xx)
 const FREE_LINE = (k, t) => [k, t, null, "free"];

@@ -23,6 +23,7 @@
    Input: punctuation is dropped from typed words (letters, digits, hyphens and
           apostrophes stay), so "say giraffe!" and "north." work. List this add-on
           before any add-on that wraps act() (restart), so they see clean words too.
+          phrasal: { "two words": "command" }   a two-word verb, filler words included ("scream at": "provoke")
           oneAtATime: TEXT, spoken: ["say", ...]   "X and Y" does X, then prints oneAtATime (not for
             the spoken verbs, where "and" is part of what's said)
    Order: its replies answer before any add-on listed after it (nouns) gets a turn.
@@ -41,9 +42,14 @@
   const verbs = new Set([...ON.values()].flatMap(Object.keys));
   const commands = {};
   for (const v of verbs) if (!CMDS[v]) commands[v] = () => print(txt(G.fallback || "You can't do that here."));   // before() answers first
+  let two = null;   // a two-word verb, read from the raw line before the engine drops "at" and "to"
+  const parse0 = parse;
+  parse = raw => { const k = raw.toLowerCase().replace(/[^\p{L}\p{N}' -]+/gu, " ").trim().split(/\s+/).slice(0, 2).join(" ");
+    two = G.phrasal?.[k] ? k : null; parse0(raw); two = null; };
   const act0 = act;   // clean the words; the echo line still shows what was typed
   act = w => {
     w = w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x));
+    if (two) { w = [G.phrasal[two], ...w.slice(two.split(" ").filter(x => !FILLER.includes(x)).length)]; two = null; }
     const and = w.indexOf("and"), v = ALIAS[w[0]] || w[0];
     // "open the giraffe gate and the jaguar gate": the first one, then a nudge (not for words said out loud)
     if (G.oneAtATime && and > 1 && and < w.length - 1 && !(G.spoken || []).includes(v)) { act0(w.slice(0, and)); return print(txt(G.oneAtATime)); }

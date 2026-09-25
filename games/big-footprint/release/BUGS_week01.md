@@ -93,3 +93,10 @@ Root cause for the suite: the extended coverage test now tries every info and Ti
 | BG-11 | P3 | "listen to <unknown>" and bare "swim" got the confused line | Fixed | listen / smell with an unknown noun give the room's line; swim: QA's R8 line, "No pool. Not even for you." elsewhere (free) |
 | BG-12 | P3 | take all / drop all read like a missing noun | Fixed | "One thing at a time, detective." (free) |
 | BG-13 | P3 | "x don" in R1 before meeting him found nothing | Fixed | "You'll meet him in a second. You can already hear him." (tour, free) |
+
+## Polish build: playtest QA round 4, Bartle graph with fresh phrasings (`qa/PLAYTEST_QA_round4_bartle_week01.txt`)
+| Bug ID | Sev | Summary | Status | Fix (one line) |
+|---|---|---|---|---|
+| F-01 | P2 | Nouns one level deeper (inside examine, smell and listen lines) had no reply | Fixed | Context fallback (closes the class): "examine X" that finds nothing prints "You look closer. " and the first sentence naming X in the room's text for this phase, this room's things' lines, or anything printed since you walked in; free. "canvas" names the portraits. Also fixed a crash it found: examining the terrace from the aviary on the tour |
+| F-02 | P2 | greet, chat, introduce, whisper got the confused line | Fixed | greet / chat / introduce = talk; whisper / mutter / reply / answer / respond = say (so "whisper giraffe" is an alibi); "introduce myself" gets QA's line |
+| F-03 | P2 | Second-wave hostile verbs got the confused line | Fixed | slap / headbutt / bite / elbow / choke = hit; vandalize / deface / trash / knock over = break; set fire / burn / ignite / light = burn (QA's line on fixtures and furniture, else break); poison gets QA's line; scream / yell / shout / holler at = provoke. New FOOD break line for "knock over pots" (coder text) |

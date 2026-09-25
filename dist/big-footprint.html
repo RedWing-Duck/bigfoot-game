@@ -472,7 +472,7 @@ const NOUNS = {
       smell: [[null, "Cedar, cream, and money on fire."]] },
     "R6.vase": { at: "landing", cat: "ART", words: ["vase", "lilies", "flowers", "stand", "pedestal"],
       examine: [["TOUR", "A tall vase of white lilies on a marble pedestal, placed exactly where every guest has to walk around it. Even the flowers here make you wait."], ["ESCAPE", "Still standing. Barely. It rocks on its pedestal every time something heavy hits the floor."], ["OUT_JAGUAR", "Knocked flat, lilies everywhere, water soaking into the carpet. Something fast came through here, low to the ground."]] },
-    "R7.portraits": { at: "gallery", cat: "ART", words: ["portraits", "portrait", "paintings", "painting", "dons", "oil portraits"],
+    "R7.portraits": { at: "gallery", cat: "ART", words: ["portraits", "portrait", "paintings", "painting", "dons", "oil portraits", "canvas", "canvases"],   // + F-01
       examine: [["TOUR", "A hundred Don Chavas in gold frames, every one painted by someone who was clearly told to make him taller. Three stand out: a horse, a lion, a saint."], ["ESCAPE", "A hundred painted Dons glaring down at the one man who got away with their secrets. One hangs crooked, slashed by claws."]] },
     "R7.horse": { at: "gallery", cat: "ART", words: ["horse", "horse portrait", "don horse", "rider", "stallion", "sword"],
       examine: [["TOUR", "The Don on a rearing white stallion, sword raised, in a battle that never happened. The horse is real, a plaque says. It lives on a ranch now and does not know it's famous."], ["ESCAPE", "The Don on his stallion, charging nowhere. He doesn't look so brave in red light."]] },
@@ -671,11 +671,15 @@ const G = {
     check: "examine", inspect: "examine", study: "examine", snatch: "take", pick: "take", catch: "take",   // GDD 12.3
     kick: "push", shove: "push", step: "push", stand: "push", lean: "sit", attack: "hit", punch: "hit", hum: "sing",
     curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter",
-    kill: "hit", murder: "hit", strangle: "hit", stab: "hit", smash: "break", slam: "break", tear: "break", burn: "break", wreck: "break",   // BG-05
+    kill: "hit", murder: "hit", strangle: "hit", stab: "hit", smash: "break", slam: "break", tear: "break", wreck: "break",   // BG-05
     destroy: "break", rip: "break", trip: "push", pickpocket: "steal", rob: "steal", swipe: "steal",
     threaten: "provoke", insult: "provoke", mock: "provoke", spit: "provoke", sneer: "provoke", show: "use",   // PT-02: show works like give
     shout: "say", yell: "say", scream: "say", holler: "say", return: "back", stuck: "hint", what: "hint", load: "save", undo: "save", restore: "save",   // NB-03, NB-04
-    directions: "exits" },   // verbs add-on
+    directions: "exits",
+    greet: "talk", chat: "talk", introduce: "talk", whisper: "say", mutter: "say", reply: "say", answer: "say", respond: "say",   // F-02
+    slap: "hit", headbutt: "hit", bite: "hit", elbow: "hit", choke: "hit", vandalize: "break", deface: "break", trash: "break",   // F-03
+    ignite: "burn", light: "burn" },   // verbs add-on
+  phrasal: { "knock over": "break", "set fire": "burn", "scream at": "provoke", "yell at": "provoke", "shout at": "provoke", "holler at": "provoke" },   // F-03
   free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen", "where", "exits", "ways", "map", "save"],   // GDD 12.1 D2; NB-04
   fallback: T.fallback,
   messages: {   // messages add-on: the engine's own lines, reworded
@@ -796,6 +800,7 @@ const G = {
       ...["coin", "ledger", "manifest", "photos"].map(i => ({ if: { said: i === "photos" ? "photos|photo" : i, has: i }, add: { turns: -1 }, say: T.item.have })) ],
     talk: [
       { if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat },   // GDD 12.1 D3: free, the checkpoint stays open
+      { if: { here: "don", said: "myself|me" }, say: "He smiles. \"I know who you are, Walter. I checked.\"" },   // F-02 (QA text): "introduce myself"
       { if: { here: "don", any: [{ said: "" }, { said: "don|chava|salvatore" }] }, say: [   // D1: by stop; a pending question first (BR-09)
         ...Object.entries(QUIZ).map(([r, [q, prompt]]) => ({ if: { in: r, not: { flag: q } }, text: prompt })),
         { if: { key: "STRIKES=2" }, text: T.don.talk }, { if: { key: "STRIKES=1" }, text: T.don.talkStop.strike1 },
@@ -882,9 +887,9 @@ G.keys = {   // GDD 12.4: the only states Script lines may name
   "SECRETS=2": { min: { secrets: 2 }, max: { secrets: 2 } }, "SECRETS=3": { min: { secrets: 3 } },
   "SECRETS>=1": { min: { secrets: 1 } }   // Script's R12 footprints and L3 tail: SECRETS=1, 2 or 3
 };
-G.groups = { touch: ["handle"], push: ["handle"], pull: ["handle"], use: ["feed"] };   // C1: HANDLE = touch, push, pull, kick, move
+G.groups = { touch: ["handle"], push: ["handle"], pull: ["handle"], use: ["feed"], burn: ["break"] };   // + F-03: burn falls back to break   // C1: HANDLE = touch, push, pull, kick, move
 G.strike = STRIKE;
-G.strikeVerbs = ["take", "touch", "open", "push", "play", "pull", "sit", "climb", "break", "hit", "steal"];   // GDD 12.1 D1
+G.strikeVerbs = ["take", "touch", "open", "push", "play", "pull", "sit", "climb", "break", "burn", "hit", "steal"];   // GDD 12.1 D1
 G.strikeWith = ["use", "drop"];   // use-on: a strike object named anywhere in the line
 G.tourFree = true;   // new verbs on the tour don't advance the turn counter (the clock is off anyway)
 const OWN_SECRETS = "ledger|manifest|photos|photo";
@@ -1139,6 +1144,15 @@ Object.assign(G.on, {
   help: G.on.hint.map(e => ({ ...e, if: { ...e.if, said: "me" } }))   // "help me" = the next hint
 });
 G.on.ways = G.on.exits;   // "ways out"
+
+// ---- Playtest round 4 (F-xx)
+const NO_FIRE = [[null, "No matches, no lighter, and no plan for what happens after."]];   // F-03 (QA text)
+G.categories.FIXTURE.burn = NO_FIRE; G.categories.FURNITURE.burn = NO_FIRE;
+G.categories.FOOD.break = [[null, "Spill Mama's pozole? You'd be out of the house before it hit the floor."]];   // F-03 "knock over pots" (coder text)
+G.anywhere.poison = [[null, "You didn't bring anything but a plaque proposal and bad intentions. Mostly the plaque."]];
+G.lookCloser = {   // F-01: examine a word the room's text used; the room part (the rest is the nouns add-on's)
+  prefix: "You look closer. ",
+  room: r => test(ESC) ? [txt(G.rooms[r].desc)] : [T.room[ROOM[r]].first, T.room[ROOM[r]].revisit].filter(t => typeof t === "string") };
 
 // ---- Playtest round 3 (BG-xx)
 const FREE_LINE = (k, t) => [k, t, null, "free"];
@@ -1432,6 +1446,7 @@ document.addEventListener("DOMContentLoaded", () => {
    Input: punctuation is dropped from typed words (letters, digits, hyphens and
           apostrophes stay), so "say giraffe!" and "north." work. List this add-on
           before any add-on that wraps act() (restart), so they see clean words too.
+          phrasal: { "two words": "command" }   a two-word verb, filler words included ("scream at": "provoke")
           oneAtATime: TEXT, spoken: ["say", ...]   "X and Y" does X, then prints oneAtATime (not for
             the spoken verbs, where "and" is part of what's said)
    Order: its replies answer before any add-on listed after it (nouns) gets a turn.
@@ -1450,9 +1465,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const verbs = new Set([...ON.values()].flatMap(Object.keys));
   const commands = {};
   for (const v of verbs) if (!CMDS[v]) commands[v] = () => print(txt(G.fallback || "You can't do that here."));   // before() answers first
+  let two = null;   // a two-word verb, read from the raw line before the engine drops "at" and "to"
+  const parse0 = parse;
+  parse = raw => { const k = raw.toLowerCase().replace(/[^\p{L}\p{N}' -]+/gu, " ").trim().split(/\s+/).slice(0, 2).join(" ");
+    two = G.phrasal?.[k] ? k : null; parse0(raw); two = null; };
   const act0 = act;   // clean the words; the echo line still shows what was typed
   act = w => {
     w = w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x));
+    if (two) { w = [G.phrasal[two], ...w.slice(two.split(" ").filter(x => !FILLER.includes(x)).length)]; two = null; }
     const and = w.indexOf("and"), v = ALIAS[w[0]] || w[0];
     // "open the giraffe gate and the jaguar gate": the first one, then a nudge (not for words said out loud)
     if (G.oneAtATime && and > 1 && and < w.length - 1 && !(G.spoken || []).includes(v)) { act0(w.slice(0, and)); return print(txt(G.oneAtATime)); }
@@ -1533,6 +1553,10 @@ document.addEventListener("DOMContentLoaded", () => {
           for the NPC whose topics' "when" passes.
           topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
                            coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
+          lookCloser: { prefix: TEXT, room: roomId => [TEXT, ...] }   "examine X" that finds nothing: the first
+            sentence naming X in the room's text (room(id)), in this room's things' examine, smell and
+            listen lines and descriptions, or in anything printed since you walked in (not the engine's
+            own lines in messages), printed after prefix. Only then "not here".
           firstLook: { id: TEXT }   replaces the examine text the first time id is examined
           report: { lines: [[part, ...], ...], after: TEXT, counted: [ids] }   printed inside every
             ending's text block, after it: a part is TEXT or { list:[TEXT, ...], none:TEXT }; a
@@ -1589,8 +1613,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const ex = G.rooms[S.room].exits || {}, to = Object.values(ex).map(x => typeof x === "string" ? x : x.to);
     const r = to.find(r => (G.rooms[r].words || []).some(w => has(a, w)));
     if (!r) return false;
-    const t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : txt(G.rooms[r].revisit || "");
+    const rv = G.rooms[r].revisit, t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
     return !!t && (print("Through the doorway: " + txt(t)), true);
+  };
+  // "examine <a word the room's text used>": that sentence, looked at closer
+  const words = s => ` ${s.replace(/\[(\w+)\]/g, (m, id) => (G.items[id] || G.npcs[id])?.name || id).toLowerCase().replace(/'s\b/g, "").replace(/[^\p{L}\p{N}' ]+/gu, " ").replace(/\s+/g, " ")} `;   // "mama" finds "Mama's"
+  let heard = [];
+  const SYS = new Set(JSON.stringify(G.messages || {}).match(/"(?:[^"\\]|\\.)*"/g)?.map(q => JSON.parse(q)) || []);   // the engine's own lines
+  const closer = a => {
+    const C = G.lookCloser, x = a.toLowerCase().trim();
+    if (!C || x.length < 3) return false;
+    const was = noun, texts = [...C.room(S.room), ...(heard.room === S.room ? heard : [])];
+    for (const id in N) if (N[id].at === S.room) { noun = N[id]; for (const v of ["examine", "smell", "listen"]) texts.push(pick(N[id][v])?.[1]); }
+    noun = was;
+    for (const v of ["smell", "listen"]) texts.push(pick(RV[S.room][v])?.[1]);
+    [...at(G.items), ...at(G.npcs)].forEach(id => texts.push((G.items[id] || G.npcs[id]).desc));
+    const stem = x.replace(/e?s$/, ""), forms = [x, x + "s", x + "es", stem].map(f => ` ${f} `).concat(stem.length >= 5 ? [` ${stem}`] : []);   // "sparks": "sparking"
+    const hit = texts.map(t => t && txt(t)).filter(Boolean).flatMap(t => t.split(/(?<=[.!?]["”]?)\s+|\n+/))
+      .find(t => forms.some(f => words(t).includes(f)));
+    return !!hit && (print(txt(C.prefix) + hit), true);
   };
   const own = new Set(["ask", "tell", ...Object.values(N).flatMap(n => Object.keys(n)), ...Object.values(CAT).flatMap(Object.keys),
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
@@ -1617,7 +1658,10 @@ document.addEventListener("DOMContentLoaded", () => {
   print = (t, c) => { plain(t, c);
     if (t === G.nowhere && key("ESCAPE")) feedback(true);
     if ((G.warnings || []).includes(t)) warned = true;
-    if ((G.npcLines || []).includes(t)) npcLines++; };
+    if ((G.npcLines || []).includes(t)) npcLines++;
+    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
+      if (heard.room !== S.room) heard = Object.assign([], { room: S.room });
+      heard.push(t); } };
   // after the room text in ESCAPE: tails, then Big Tony's band line
   const band = () => { const B = G.bands, type = B?.rooms[S.room], k = type && Object.keys(B.lines).find(key);
     return k && B.lines[k][type] && txt(rotate(B.lines[k][type])); };
@@ -1676,7 +1720,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (v === "go" && (DIRS[a] || Object.values(DIRS).includes(a) || (G.rooms[S.room].exits || {})[a])) return;
     const all = scan(a), found = best([...all]), hits = all.filter(x => x.kind !== "away"), h = found?.kind === "away" ? null : found;
     if (!h) {
-      if (v === "examine" && nextDoor(a)) return true;
+      if (v === "examine" && (nextDoor(a) || closer(a))) return true;
       const r = !found && pick(RV[S.room][v], a);
       if (r && r[2]) return say(r);                     // "swim in the fountain": a room line that names its own object
       if ((v === "listen" || v === "smell") && !found) return answer(v, "");   // "listen to the wind": the room's line

@@ -567,7 +567,7 @@ test("Playtest: extended coverage: bare verbs, social verbs, prepositions, nouns
       if (n.at === room || n.at === "any") continue;
       const w = [...n.words].sort((a, b) => b.length - a.length)[0];
       if ([...here, ...next, "stairs", "staircase", "staircases", "step", "steps", "door", "fountain", "coins", "coin", "card", "photos", "gate"].some(x => ` ${w} `.includes(` ${x} `) || ` ${x} `.includes(` ${w} `))) continue;
-      for (const v of ["examine", "open"]) tryIt(`${phase} ${room} (${id} is elsewhere)`, `${v} ${w}`, (out, cost) => out.length === 1 && out[0] === "Nothing like that around here." && cost === 0);
+      for (const v of ["examine", "open"]) tryIt(`${phase} ${room} (${id} is elsewhere)`, `${v} ${w}`, (out, cost) => out.length === 1 && (out[0] === "Nothing like that around here." || out[0].startsWith("You look closer. ")) && cost === 0);   // F-01: unless this room's text used the word
     }
   }
   // 2. Nando at a checkpoint: talk, ask, tell, examine are free and never confused
@@ -716,4 +716,39 @@ test("Playtest round 3 P3s: BG-07 to BG-13", () => {
   assert.equal(t.last(), "One thing at a time, detective.", "BG-12");
   assert.equal(t.get("S.count.turns"), t0, "BG-12: free");
   assert.equal(play("x don").last(), "You'll meet him in a second. You can already hear him.", "BG-13");
+});
+
+test("Playtest round 4: F-01 coverage: every word read in a room, two levels deep, can be examined", t => {
+  const NOT = "Nothing like that around here.";
+  const wordsOf = lines => [...new Set(lines.filter(l => !l.startsWith(">")).join(" ").replace(/You look closer\. /g, "").toLowerCase().match(/[\p{L}']{4,}/gu) || [])]
+    .map(w => w.replace(/'s$|'$/, "")).filter(w => w.length >= 4);
+  let n = 0;
+  const sweep = (g, where) => {
+    const arrived = g.lines().slice(g.lines().findLastIndex(l => l.startsWith(">")));
+    const level = words => words.flatMap(w => { const k = g.lines().length; g.type("x " + w); n++;
+      const out = g.lines().slice(k); assert.notEqual(out.at(-1), NOT, `${where}: x ${w}`); return out; });
+    level(wordsOf(level(wordsOf(arrived))));
+    assert.equal(g.get("S.over"), false, where);
+  };
+  const tour = bigfoot();
+  sweep(tour, "elevator (tour)");
+  TOUR.forEach((c, i) => { tour.type(c); if (!c.startsWith("say")) sweep(tour, `tour step ${i + 1} (${c})`); });
+  const esc = toEscape();
+  for (const c of [...BASE, "w", "e", "e", "w", "n", "s"]) { esc.type(c); if (["s", "n", "e", "w", "d", "run"].includes(c)) sweep(esc, `escape (${c}) in ${esc.get("S.room")}`); }
+  t.diagnostic(`${n} examine commands`);
+});
+
+test("Playtest round 4 P2s: F-01 to F-03", () => {
+  assert.equal(play("n", "w", "e", "e", "x pencil").last(), "You look closer. Someone wrote on the frame in pencil: \"Los domingos.\"", "F-01");
+  const s = play("n", "introduce myself", "greet the don");
+  assert.equal(s.lines().at(-3), "He smiles. \"I know who you are, Walter. I checked.\"", "F-02");
+  assert.match(s.last(), /Every stone in this floor/, "F-02: greet = talk");
+  const w = toEscape(); w.type("open giraffe gate", "s", "s", "s", "whisper giraffe");
+  assert.equal(w.get("S.flags.checkpoint || false"), false, "F-02: whisper = say");
+  const k = play("n", "scream at don");
+  assert.match(k.last(), /We were getting along so well/, "F-03: scream at = provoke");
+  assert.equal(play("n", "slap don").last(), play("n", "hit don").last(), "F-03: slap = hit");
+  assert.match(play("n", "w", "e", "e", "w", "n", "poison the pozole").last(), /bad intentions/, "F-03");
+  assert.match(play("n", "w", "e", "e", "w", "n", "say both", "s", "u", "e", "set fire to humidor").last(), /^No matches, no lighter/, "F-03");
+  assert.match(play("n", "w", "e", "e", "w", "n", "say both", "s", "u", "knock over vase").last(), /before the pieces stopped bouncing/, "F-03: knock over = break");
 });

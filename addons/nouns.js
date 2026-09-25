@@ -38,6 +38,10 @@
           for the NPC whose topics' "when" passes.
           topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
                            coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
+          lookCloser: { prefix: TEXT, room: roomId => [TEXT, ...] }   "examine X" that finds nothing: the first
+            sentence naming X in the room's text (room(id)), in this room's things' examine, smell and
+            listen lines and descriptions, or in anything printed since you walked in (not the engine's
+            own lines in messages), printed after prefix. Only then "not here".
           firstLook: { id: TEXT }   replaces the examine text the first time id is examined
           report: { lines: [[part, ...], ...], after: TEXT, counted: [ids] }   printed inside every
             ending's text block, after it: a part is TEXT or { list:[TEXT, ...], none:TEXT }; a
@@ -94,8 +98,25 @@
     const ex = G.rooms[S.room].exits || {}, to = Object.values(ex).map(x => typeof x === "string" ? x : x.to);
     const r = to.find(r => (G.rooms[r].words || []).some(w => has(a, w)));
     if (!r) return false;
-    const t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : txt(G.rooms[r].revisit || "");
+    const rv = G.rooms[r].revisit, t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : typeof rv === "string" || Array.isArray(rv) ? txt(rv) : "";   // a revisit built from parts has no one line
     return !!t && (print("Through the doorway: " + txt(t)), true);
+  };
+  // "examine <a word the room's text used>": that sentence, looked at closer
+  const words = s => ` ${s.replace(/\[(\w+)\]/g, (m, id) => (G.items[id] || G.npcs[id])?.name || id).toLowerCase().replace(/'s\b/g, "").replace(/[^\p{L}\p{N}' ]+/gu, " ").replace(/\s+/g, " ")} `;   // "mama" finds "Mama's"
+  let heard = [];
+  const SYS = new Set(JSON.stringify(G.messages || {}).match(/"(?:[^"\\]|\\.)*"/g)?.map(q => JSON.parse(q)) || []);   // the engine's own lines
+  const closer = a => {
+    const C = G.lookCloser, x = a.toLowerCase().trim();
+    if (!C || x.length < 3) return false;
+    const was = noun, texts = [...C.room(S.room), ...(heard.room === S.room ? heard : [])];
+    for (const id in N) if (N[id].at === S.room) { noun = N[id]; for (const v of ["examine", "smell", "listen"]) texts.push(pick(N[id][v])?.[1]); }
+    noun = was;
+    for (const v of ["smell", "listen"]) texts.push(pick(RV[S.room][v])?.[1]);
+    [...at(G.items), ...at(G.npcs)].forEach(id => texts.push((G.items[id] || G.npcs[id]).desc));
+    const stem = x.replace(/e?s$/, ""), forms = [x, x + "s", x + "es", stem].map(f => ` ${f} `).concat(stem.length >= 5 ? [` ${stem}`] : []);   // "sparks": "sparking"
+    const hit = texts.map(t => t && txt(t)).filter(Boolean).flatMap(t => t.split(/(?<=[.!?]["”]?)\s+|\n+/))
+      .find(t => forms.some(f => words(t).includes(f)));
+    return !!hit && (print(txt(C.prefix) + hit), true);
   };
   const own = new Set(["ask", "tell", ...Object.values(N).flatMap(n => Object.keys(n)), ...Object.values(CAT).flatMap(Object.keys),
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
@@ -122,7 +143,10 @@
   print = (t, c) => { plain(t, c);
     if (t === G.nowhere && key("ESCAPE")) feedback(true);
     if ((G.warnings || []).includes(t)) warned = true;
-    if ((G.npcLines || []).includes(t)) npcLines++; };
+    if ((G.npcLines || []).includes(t)) npcLines++;
+    if (c !== "cmd" && typeof t === "string" && /\p{Ll}/u.test(t) && !SYS.has(t) && !t.startsWith(G.lookCloser?.prefix || "\0")) {   // what was read in this room
+      if (heard.room !== S.room) heard = Object.assign([], { room: S.room });
+      heard.push(t); } };
   // after the room text in ESCAPE: tails, then Big Tony's band line
   const band = () => { const B = G.bands, type = B?.rooms[S.room], k = type && Object.keys(B.lines).find(key);
     return k && B.lines[k][type] && txt(rotate(B.lines[k][type])); };
@@ -181,7 +205,7 @@
     if (v === "go" && (DIRS[a] || Object.values(DIRS).includes(a) || (G.rooms[S.room].exits || {})[a])) return;
     const all = scan(a), found = best([...all]), hits = all.filter(x => x.kind !== "away"), h = found?.kind === "away" ? null : found;
     if (!h) {
-      if (v === "examine" && nextDoor(a)) return true;
+      if (v === "examine" && (nextDoor(a) || closer(a))) return true;
       const r = !found && pick(RV[S.room][v], a);
       if (r && r[2]) return say(r);                     // "swim in the fountain": a room line that names its own object
       if ((v === "listen" || v === "smell") && !found) return answer(v, "");   // "listen to the wind": the room's line
