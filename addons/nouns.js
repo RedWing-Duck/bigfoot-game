@@ -17,9 +17,25 @@
             "Through the doorway: " + its REVISIT (TOUR) or again (ESCAPE) text
           groups: { verb: ["other", ...] }   more keys to try for a verb ("push": ["handle"])
           strike: EFFECT, strikeVerbs: [...], strikeWith: [...]   during keys.TOUR, a strike verb
+            (noting STRIKE3_BY = the thing's strike name)
             on a thing with "strike" runs the strike effect (strikeWith verbs: when a strike
             thing is named anywhere in the line, "use coin on hippo")
           tourFree: true   commands this add-on answers cost no turn while keys.TOUR passes
+          tails: { room: [[key, text, group?, "once"?], ...] }   ESCAPE: printed after the room's
+            description, every passing line in order (one per group; "once": once a game)
+          bands: { rooms: { room: TYPE }, lines: { KEY: { TYPE: [TEXT, TEXT] } } }   one line after the
+            tails, from the first passing KEY; each cell alternates its two lines
+          feedback: [TEXT, ...]   ESCAPE: after a turn-costing reply that changed nothing (a
+            category or anywhere line, "Nothing happens.", G.nowhere, or an effect with
+            feedback:true), the next line, in turn
+          reactions: { id: TEXT }, reactIf: COND   printed after the FIRST look at id while reactIf passes
+          caught: { if: COND, by: (verb, words) => value }   while "if" passes, a command that costs a
+            turn and no earlier add-on answered does nothing but note CAUGHT_BY = by(...)
+          topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
+                           coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
+   Effects: rotate:[TEXT, ...] prints the next line of that list, in turn.
+            note:{ name: value } remembers a value; condition noted:{ name: value } tests it.
+            feedback:true (see above).
    Matching: the longest phrase typed wins. A room noun beats an "any" noun and an item
    of the same length; an NPC in the room beats a noun of the same length.
    Nothing matched: the engine answers for its own commands; a verb of this add-on
@@ -53,7 +69,7 @@
   const CORE = ["take", "drop", "examine", "use", "talk", "go", "look", "wait"];   // the engine has its own "not here" for these
   let verb = "";
   const refund = () => { if (!FREE.includes(verb) && S.count.turns > 0) S.count.turns--; };
-  const say = line => { if (!line) return false; print(txt(line[1])); if (line[3] === "free" || tourFree()) refund(); return true; };
+  const say = (line, dull) => { if (!line) return false; print(txt(line[1])); if (line[3] === "free" || tourFree()) refund(); else if (dull) feedback(); return true; };
   const tourFree = () => G.tourFree && key("TOUR");
   const verbKeys = v => [v, ...(GR[v] || []), "*"];
   const lines = (T, v, arg) => { for (const k of verbKeys(v)) { const l = pick(T?.[k], arg); if (l) return l; } };
@@ -65,18 +81,56 @@
     const t = key("ESCAPE") ? pick(G.rooms[r].again)?.[1] : txt(G.rooms[r].revisit || "");
     return !!t && (print("Through the doorway: " + txt(t)), true);
   };
-  const own = new Set([...Object.values(N).flatMap(n => Object.keys(n)), ...Object.values(CAT).flatMap(Object.keys),
+  const own = new Set(["ask", "tell", ...Object.values(N).flatMap(n => Object.keys(n)), ...Object.values(CAT).flatMap(Object.keys),
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
     ...(G.strikeVerbs || [])].filter(v => !["at", "cat", "words", "strike", "puzzle", "examine", "*", "handle", "feed"].includes(v)));
+  // rotations, notes, first looks: saved in S.nouns
+  const rotate = L => { const k = JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[n % L.length]; };
+  let pending = false;
+  const feedback = () => { if (G.feedback && key("ESCAPE") && !FREE.includes(verb)) print(txt(rotate(G.feedback))); };
+  const run0 = run;
+  run = e => { run0(e); if (pending) { pending = false; feedback(); } };
+  const plain = print;   // the engine's "you can't go that way", reworded by the messages add-on
+  print = (t, c) => { plain(t, c); if (t === G.nowhere && key("ESCAPE")) { verb = "go"; feedback(); } };
+  // after the room text in ESCAPE: tails, then Big Tony's band line
+  const band = () => { const B = G.bands, type = B?.rooms[S.room], k = type && Object.keys(B.lines).find(key);
+    return k && B.lines[k][type] && txt(rotate(B.lines[k][type])); };
+  const look0 = CMDS.look;
+  CMDS.look = a => {
+    look0(a);
+    if (!key("ESCAPE")) return;
+    const done = new Set();
+    for (const [k, t, group, once] of G.tails?.[S.room] || []) {
+      const id = S.room + ":" + t.slice(0, 30);
+      if (!key(k) || (group && done.has(group)) || (once && S.nouns.once.includes(id))) continue;
+      if (group) done.add(group); if (once) S.nouns.once.push(id);
+      print(txt(t));
+    }
+    const b = band(); if (b) print(b);
+  };
+  const react = id => { const first = !S.nouns.seen.includes(id);
+    if (first) S.nouns.seen.push(id);
+    if (first && G.reactions?.[id] && test(G.reactIf)) print(txt(G.reactions[id])); };
+  // "ask <npc> about <topic>"
+  const ask = a => {
+    for (const npc in G.topics || {}) { const P = G.topics[npc];
+      if (!test(P.when)) continue;
+      if (P.coldKey && key(P.coldKey)) return say([null, rotate(P.cold)]);
+      const hits = P.list.flatMap(t => t.words.filter(w => has(a, w)).map(w => ({ t, len: w.split(" ").length }))).sort((x, y) => y.len - x.len);
+      return say(pick(hits[0]?.t.lines || P.other)); }
+  };
   const commands = {};
   for (const v of own) if (!CMDS[v]) commands[v] = () => print("I don't understand that. Type 'help'.");
   const mine = v => own.has(v) || v === "examine" || v === "go" || v === "wait";
   function answer(v, a) {
     noun = null; verb = v;
+    if ((v === "ask" || v === "tell") && ask(a)) return true;
     if (v === "wait") return key("ESCAPE") && say(pick(ANY.wait));
     if (!a) {   // the verb alone: this room's line, then the lone-verb line, then anywhere
       if (v === "examine" || v === "go") return;
-      return say(pick(RV[S.room][v]) || pick(ALONE[v]) || pick(ANY[v]));
+      if (v === "listen" && !pick(RV[S.room][v]) && key("ESCAPE") && band()) return print(band()), true;
+      const own = pick(RV[S.room][v]);
+      return own ? say(own) : say(pick(ALONE[v]) || pick(ANY[v]), true);
     }
     if (v === "go" && (DIRS[a] || Object.values(DIRS).includes(a) || (G.rooms[S.room].exits || {})[a])) return;
     const hits = scan(a), h = best([...hits]);
@@ -92,23 +146,33 @@
     if (key("TOUR") && G.strike) {
       const target = (G.strikeWith || []).includes(v) ? hits.find(x => thing(x).strike) : t.strike && h;
       if (target && ((G.strikeVerbs || []).includes(v) || (G.strikeWith || []).includes(v))) {
+        S.nouns.notes.STRIKE3_BY = thing(target).strike;   // what caused it (for the L1 opener)
         run(G.strike); if (tourFree()) refund(); return true; }
     }
-    if (h.kind !== "noun" && (v === "examine" || (!own.has(v) && v !== "go"))) return;   // items and NPCs: the engine's own lines
+    if (h.kind !== "noun" && v === "examine") return react(h.id), undefined;   // items and NPCs: the engine's own lines
+    if (h.kind !== "noun" && !own.has(v) && v !== "go") return;
     if (h.kind === "noun") noun = t;
-    if (v === "examine") return say(pick(t.examine));
+    if (v === "examine") { if (h.kind !== "noun") return react(h.id), undefined;
+      say(pick(t.examine)); react(h.id); return true; }
     const vv = v === "go" ? "enter" : v;
-    const line = (h.kind === "noun" && (lines(t, vv, a) || (v === "go" && lines(t, "go", a))))
-      || lines(CAT[t.cat], v === "go" ? "push" : vv, a) || lines(ANY, vv, a);
-    if (line) return say(line);
+    const mineLine = h.kind === "noun" && (lines(t, vv, a) || (v === "go" && lines(t, "go", a)));
+    if (mineLine) return say(mineLine);
+    const line = lines(CAT[t.cat], v === "go" ? "push" : vv, a) || lines(ANY, vv, a);
+    if (line) return say(line, true);
     if (v === "go") return exec("push", a), true;
-    return print("Nothing happens."), tourFree() && refund(), true;
+    return say([null, "Nothing happens."], true);
   }
   addon({
     name: "nouns",
     commands,
-    conditions: { key: v => key(v) },
-    before(v, a) { if (mine(v)) return answer(v, a); },
+    state: { turn: {}, notes: {}, seen: [], once: [] },
+    conditions: { key: v => key(v), noted: o => Object.entries(o).every(([k, v]) => S.nouns.notes[k] === v) },
+    effects: { rotate: L => print(txt(rotate(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
+    before(v, a) {
+      // a checkpoint: anything that costs a turn and reached here fails it. Note why, and let CAUGHT say it
+      if (G.caught && test(G.caught.if) && !FREE.includes(v)) return (S.nouns.notes.CAUGHT_BY ??= G.caught.by(v, a)), true;
+      if (mine(v)) return answer(v, a);
+    },
     validate(need) {
       const check = (k, p) => k && k.split("&").forEach(x => { x = x.replace(/^!/, ""); need(x === "SOLVED" || x in K, p, `no key "${x}"`); });
       const walk = (L, p) => (L || []).forEach((l, i) => { check(l[0], `${p}[${i}]`); need(typeof l[1] === "string", `${p}[${i}]`, "needs text");

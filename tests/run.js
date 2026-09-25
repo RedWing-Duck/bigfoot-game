@@ -361,3 +361,88 @@ test("Polish A: x lemur, smell humidor, look under table answer in voice; strike
   s.type("smell", "listen", "search bench", "dance");
   assert.equal(s.get("S.count.turns"), t0, "info verbs are free; new verbs on the tour cost no turn");
 });
+
+// ---- Polish B: state (one test per state key that changes text)
+const toEscape = () => { const g = bigfoot(); g.type(...TOUR); return g; };
+test("Polish B: OUT_GIRAFFE, P2, COIN_HELD, Q1: nouns follow state", () => {
+  const g = toEscape();
+  g.type("open giraffe gate", "s", "s", "x hippo");
+  assert.match(g.last(), /The coin in your pocket suddenly feels heavy/, "COIN_HELD");
+  g.type("use coin on hippo", "x hippo");
+  assert.match(g.last(), /jaw hangs open/, "P2");
+  g.type("s", "run", "e", "d", "say giraffe", "x banister");
+  assert.match(g.last(), /giraffe's head rests on the upper banister/, "OUT_GIRAFFE");
+  const q = bigfoot();
+  q.type("n", "w", "e", "e", "w", "n", "x pots");
+  assert.match(q.last(), /^On the sideboard, two pots/);
+  q.type("say both", "x pots");
+  assert.equal(q.last(), "Two pots, one family. You get it now.", "Q1");
+});
+
+test("Polish B: GDD 12.1 D3: talk, ask and examine Nando at a checkpoint are free and keep it open", () => {
+  const g = toEscape();
+  g.type("s", "s", "s");
+  const clock = g.get("S.count.clock");
+  g.type("talk to nando", "ask nando about peacocks", "x nando", "talk", "x guard");
+  assert.equal(g.get("S.over"), false);
+  assert.equal(g.get("S.flags.checkpoint"), true, "still stopped");
+  assert.equal(g.get("S.count.clock"), clock, "no turn spent");
+  assert.ok(g.lines().some(l => l === "\"Not a conversation, friend. Why are you here?\""), "repeat lines rotate");
+  g.type("run");
+  assert.equal(g.get("S.flags.checkpoint || false"), false, "run clears it");
+});
+
+test("Polish B: CAUGHT_BY openers (D4) and STRIKE3_BY is recorded", () => {
+  const cases = [["say jaguar", /No animal\. No noise/], ["e", /hand the size of a skillet/], ["dance", /doesn't wait for you to finish/], ["give card to nando", /zip-ties you anyway/]];
+  for (const [cmd, opener] of cases) {
+    const g = toEscape(); g.type("s", "s", "s", cmd);
+    assert.match(g.last(), /^CAUGHT\n\n/, cmd); assert.match(g.last(), opener, cmd);
+    assert.equal(g.lines().at(-2), "> " + cmd, "nothing prints between the command and CAUGHT");
+  }
+  const u = toEscape(); u.type("open jaguar gate", "s", "s", "s", "say jaguar", "e", "d", "say jaguar");
+  assert.match(u.last(), /I just put that thing back/, "USED");
+  const r = toEscape(); r.type("s", "s", "s", "run", "e", "d", "run");
+  assert.match(r.last(), /this time nothing lands on his head/, "RUN2");
+  const s = bigfoot(); s.type("n", "w", "take rifle", "kick rifle", "pull rifle");
+  assert.equal(s.get("S.nouns.notes.STRIKE3_BY"), "RIFLE");
+  const q = bigfoot(); q.type("n", "w", "take rifle", "e", "e", "touch piano", "w", "n", "say neither");
+  assert.equal(q.get("S.nouns.notes.STRIKE3_BY"), "Q1");
+});
+
+test("Polish B: STRIKES tiers: the Don's pass, talk, examine and topics cool off", () => {
+  const g = bigfoot();
+  g.type("n", "talk to don");
+  assert.equal(g.last(), "\"Look around, Walter. Every stone in this floor, I earned.\"");
+  g.type("w", "touch rifle", "talk to don");
+  assert.match(g.last(), /We talk later, Walter/, "STRIKES=1");
+  g.type("push rifle", "e");
+  assert.equal(g.last(), "The Don doesn't slow down or look back. \"Keep up.\"", "PASS at STRIKES=2");
+  g.type("x don");
+  assert.match(g.last(), /He's looking at you\.$/);
+  g.type("ask don about piano", "ask don about hippo");
+  assert.deepEqual(g.lines().slice(-3).filter(l => !l.startsWith(">")), ["\"No more questions.\"", "He doesn't answer. He just keeps walking."]);
+});
+
+test("Polish B: ESC_REVISIT, tails, foreshadowing and Nando's traces", () => {
+  const g = toEscape();
+  g.type("s", "s");
+  assert.ok(g.lines().includes("Past the fountain, a flashlight beam slides along the portraits in the gallery. Someone's waiting."));
+  g.type("s", "run", "n");
+  assert.ok(g.lines().some(l => l.startsWith("Pepita again, mouth shut")), "ESC_REVISIT");
+  g.type("s");
+  assert.ok(g.lines().some(l => l.startsWith("Nando's cap lies upside down")), "CP7_DONE trace");
+  g.type("e");
+  assert.ok(g.lines().includes("Below, a flashlight beam sweeps the foyer, back and forth, back and forth. Someone's down there."), "CP2 foreshadow");
+});
+
+test("Polish B: clock bands and turn feedback never repeat back to back; bands follow the clock", () => {
+  const g = toEscape(), bands = [], fb = g.get("G.feedback");
+  for (let i = 0; i < 6; i++) { g.type("look"); bands.push(g.last()); }
+  for (let i = 1; i < bands.length; i++) assert.notEqual(bands[i], bands[i - 1]);
+  const said = [];
+  for (let i = 0; i < 6; i++) { g.type("dance"); said.push(g.last()); }
+  assert.ok(said.every(l => fb.includes(l)), "feedback follows a reply that changed nothing");
+  for (let i = 1; i < said.length; i++) assert.notEqual(said[i], said[i - 1]);
+  g.run("S.count.clock = 3"); g.type("look");
+  assert.ok(g.lines().slice(-4).some(l => ["Footsteps on the stairs below, and every step shakes the roof.", "A shadow on the terrace that isn't yours. It moves when you don't."].includes(l)), "BAND_C on the roof");
+});
