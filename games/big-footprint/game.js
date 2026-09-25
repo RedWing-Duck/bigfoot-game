@@ -410,7 +410,7 @@ const NOUNS = {
       examine: [["TOUR", "From up here you can see the whole foyer: the gold compass rose, both staircases, and every step on each. The right staircase has one more than the left."], ["ESCAPE", "The balcony trembles under your hands. Below, the foyer flickers red and dark, red and dark."], ["P3", "Below, the panel in the right staircase gapes open, a black rectangle in all that marble."]] },
     "R6.foyer": { at: "landing", cat: "FIXTURE", words: ["foyer", "down there", "compass rose", "marble"],
       examine: [["TOUR", "Marble and gold all the way down, and the Don's compass rose pointing every direction at once, all of them \"CHAVA.\""], ["ESCAPE", "Red light, black shadows, and at the bottom of it all, the gold elevator. Straight down and you're nearly home."]] },
-    "R6.stairs": { at: "landing", cat: "FIXTURE", words: ["staircases", "left staircase", "right staircase", "thirteenth step", "13th step", "steps"],
+    "R6.stairs": { at: "landing", cat: "FIXTURE", words: ["staircases", "stairs", "left staircase", "right staircase", "thirteenth step", "13th step", "steps"],
       examine: [["TOUR", "Twelve steps on the family side, thirteen on the business side, meeting right here at your feet. The top step of the business side shines a little brighter than the rest."], ["ESCAPE", "From above, the thirteenth step on the business side catches the red light a half second before the others."], ["P3", "The business side has a hole in it now. You put it there."]] },
     "R6.officedoor": { at: "landing", cat: "FIXTURE", words: ["office door", "door", "heavy door", "oak door", "brass plaque", "plaque door"],
       examine: [["TOUR", "Heavy oak, and screwed to it, a brass plaque: \"S. BELLANDI-REYES, PRESIDENT.\" President of what, it doesn't say. The Don does love a plaque."], ["ESCAPE", "Wide open, swinging slightly. Whatever mattered in there left with the Don."]] },
@@ -603,7 +603,7 @@ const G = {
     upstairs: "up", downstairs: "down",
     check: "examine", inspect: "examine", study: "examine", snatch: "take", pick: "take", catch: "take",   // GDD 12.3
     kick: "push", shove: "push", step: "push", stand: "push", lean: "sit", attack: "hit", punch: "hit", hum: "sing",
-    curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter" },   // verbs add-on
+    curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter", show: "use" },   // PT-02: show works like give   // verbs add-on
   free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen"],   // GDD 12.1 D2
   fallback: T.fallback,
   messages: {   // messages add-on: the engine's own lines, reworded
@@ -657,7 +657,6 @@ const G = {
     gallery: { name: "Gallery Hall", desc: desc("gallery"), exits: exits("gallery", { east: "landing", north: "atrium" }) },                 // R7
     atrium: { name: "Atrium", desc: desc("atrium"), exits: exits("atrium", { south: "gallery", north: "aviary" }),   // R8
       on: merge(strikes(HIPPO, "HIPPO"), {
-        drop: [{ if: { ...ESC, said: ["coin", "hippo|mouth|pepita|fountain"], has: "coin" }, take: "coin", ...secret("p2", "manifest", T.p2.solved) }],   // GDD 12.6
         use: [{ if: { ...ESC, said: "coin", has: "coin" }, take: "coin", ...secret("p2", "manifest", T.p2.solved) },
           { if: { ...ESC, said: "coin", key: "COIN_DROPPED" }, add: { turns: -1 }, say: T.graded.noCoin },   // E2: no turn
           { if: { ...ESC, said: ["card|briefing", HIPPO] }, say: T.graded.card, feedback: true },
@@ -730,8 +729,6 @@ const G = {
       { if: { said: "nando|guard", min: { cleared: 1 }, not: { here: "nando" } }, say: T.nando.after }],
     ask: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],   // D3
     tell: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],
-    show: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } },
-      { if: { here: "don", said: "card|briefing" }, say: T.don.social.card }, { if: { here: "don", said: "plaque|proposal|mockup" }, say: T.don.social.plaque }],
     bribe: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } }, { if: { here: "don" }, say: T.don.social.bribe }],
     flatter: [{ if: { here: "don" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] }, { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
     ...Object.fromEntries(["lie", "shake", "thank", "hug"].map(v => [v, [{ if: { here: "don" }, say: T.don.social[v] }]])),
@@ -743,7 +740,6 @@ const G = {
         { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, max: { [a]: 0 } }, note: { CAUGHT_BY: "UNRELEASED" } },
         { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, min: { [a]: 2 } }, note: { CAUGHT_BY: "USED" } }]),
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "OTHER" } }],   // CP-01
-    open: [{ if: { ...TOUR, said: "gate|giraffe|jaguar" }, say: T.gateTour }],
     hint: [   // Script E1: each ladder keeps its own place (nouns add-on's ladder effect)
       { if: { flag: "checkpoint" }, ladder: T.ladder.checkpoint },
       { if: { any: [{ in: "dining", not: { flag: "q1" } }, { in: "office", not: { flag: "q2" } }] }, ladder: T.ladder.question },
@@ -906,8 +902,13 @@ G.alone = {   // Script C2 "(no noun)" lines; SMELL / LISTEN try the room's own 
   eat: [[null, "You're too nervous to eat, and there's no time."]],
   knock: [[null, "Knock on what?"]],
   sit: [[null, "You sit on the floor for a moment. It's very clean. You get up."]],
-  climb: [[null, "Climb what? Try \"up\" or \"down.\""]]
+  climb: [[null, "Climb what? Try \"up\" or \"down.\""]],
+  listen: [["TOUR", "Violins somewhere, footsteps on marble, and the Don breathing through his nose."]],   // PT-01 (QA text; ESCAPE: the band line)
+  ...Object.fromEntries(["Take", "touch", "push", "pull", "open", "close"].map(v => [v, [[null, v[0].toUpperCase() + v.slice(1).toLowerCase() + " what?", null, "free"]]]))   // no noun: a free prompt
 };
+ROOM_VERBS.elevator = { listen: NOUNS["R1.elevator"].listen };   // PT-01
+ROOM_VERBS.foyer = { listen: NOUNS["R2.marble"].listen };
+ROOM_VERBS.trophy = { listen: NOUNS["R3.cases"].listen };
 for (const r in ROOM_VERBS) G.rooms[r].verbs = ROOM_VERBS[r];
 // Script B [ROOM.adjacent]: room-name words, and the ESCAPE revisit line shown from next door
 const WORDS = { elevator: ["elevator"], foyer: ["foyer"], trophy: ["trophy room", "trophies"], salon: ["salon", "music salon", "piano room"],
@@ -922,18 +923,21 @@ Object.assign(G.keys, Object.fromEntries([
   ...["UNRELEASED", "USED", "RUN2", "ITEM", "MOVE", "OTHER"].map(v => ["CAUGHT_BY=" + v, { noted: { CAUGHT_BY: v } }])]));
 G.caught = { if: { flag: "checkpoint" }, by: v => v === "go" ? "MOVE" : "OTHER" };   // anything else at a checkpoint (D4)
 G.tails = {   // Script B [ROOM.Rn.tails]: ESCAPE, after the room text
-  foyer: [["OUT_GIRAFFE", "A giraffe's head hangs over the upper banister, chewing a silk lily."], ["OUT_PEACOCKS", "Peacock feathers skid across the marble in the draft."],
-    ["OUT_JAGUAR", "Somewhere nearby, a man yells \"GATO! GATO!\" and a door slams."], ["CP2_DONE", "Nando's flashlight rolls in a slow circle at the foot of the stairs, still switched on."]],
-  landing: [["OUT_JAGUAR", "The lily vase lies smashed on the carpet."],
-    ["!CP2_DONE&!CP2_PENDING", "Below, a flashlight beam sweeps the foyer, back and forth, back and forth. Someone's down there."],
-    ["CP7_DONE&USED_JAGUAR", "A radio crackles somewhere: \"The GATO is in the dining room! It's eating the pozole!\"", "radio"],
-    ["CP7_DONE&USED_GIRAFFE", "A radio crackles somewhere: \"Giraffe on the stairs! I repeat, giraffe on the stairs!\"", "radio"],
-    ["CP7_DONE&USED_PEACOCKS", "A radio crackles somewhere: \"They're in the gallery! No, the atrium! They're everywhere!\"", "radio"]],
-  gallery: [["OUT_PEACOCKS", "Loose feathers drift down the hall."], ["CP7_DONE", "Nando's cap lies upside down on the carpet. Somewhere far off, he's shouting at something with four legs."]],
-  atrium: [["!CP7_DONE&!CP7_PENDING", "Past the fountain, a flashlight beam slides along the portraits in the gallery. Someone's waiting."], ["OUT_GIRAFFE", "The tops of the palms have been stripped bare."]],
-  aviary: [["OUT_GIRAFFE", "Through the glass, a long neck glides past, heading somewhere it definitely isn't allowed."]],
-  terrace: [["OUT_GIRAFFE&OUT_JAGUAR&OUT_PEACOCKS", "For one second the roof is quiet. Then the palace below you erupts.", null, "once"]]
+  foyer: [{ key: "OUT_GIRAFFE", text: "A giraffe's head hangs over the upper banister, chewing a silk lily." }, { key: "OUT_PEACOCKS", text: "Peacock feathers skid across the marble in the draft." },
+    { key: "OUT_JAGUAR", text: "Somewhere nearby, a man yells \"GATO! GATO!\" and a door slams." }, { key: "CP2_DONE", text: "Nando's flashlight rolls in a slow circle at the foot of the stairs, still switched on." }],
+  landing: [{ key: "OUT_JAGUAR", text: "The lily vase lies smashed on the carpet." },
+    { key: "!CP2_DONE&!CP2_PENDING", text: "Below, a flashlight beam sweeps the foyer, back and forth, back and forth. Someone's down there.", top: true },
+    { key: "CP7_DONE&USED_JAGUAR", text: "A radio crackles somewhere: \"The GATO is in the dining room! It's eating the pozole!\"", group: "radio" },
+    { key: "CP7_DONE&USED_GIRAFFE", text: "A radio crackles somewhere: \"Giraffe on the stairs! I repeat, giraffe on the stairs!\"", group: "radio" },
+    { key: "CP7_DONE&USED_PEACOCKS", text: "A radio crackles somewhere: \"They're in the gallery! No, the atrium! They're everywhere!\"", group: "radio" }],
+  gallery: [{ key: "OUT_PEACOCKS", text: "Loose feathers drift down the hall." }, { key: "CP7_DONE", text: "Nando's cap lies upside down on the carpet. Somewhere far off, he's shouting at something with four legs." }],
+  atrium: [{ key: "!CP7_DONE&!CP7_PENDING", text: "Past the fountain, a flashlight beam slides along the portraits in the gallery. Someone's waiting.", top: true }, { key: "OUT_GIRAFFE", text: "The tops of the palms have been stripped bare." }],
+  aviary: [{ key: "OUT_GIRAFFE", text: "Through the glass, a long neck glides past, heading somewhere it definitely isn't allowed." }],
+  terrace: [{ key: "OUT_GIRAFFE&OUT_JAGUAR&OUT_PEACOCKS", text: "For one second the roof is quiet. Then the palace below you erupts.", once: true }]
 };
+G.extras = 2;   // PT-05: at most two extra lines after a room's text (Nando's greeting counts), in G.tails order, then the band
+G.npcLines = [T.nando.greet, T.nando.greet2, T.nando.greet2ran];
+G.warnings = [T.clock[6], T.clock[3], T.clock[1]];
 G.bands = {   // Script B [ROOM.clockbands]: Big Tony's sound ladder, two lines per cell, alternating
   rooms: { elevator: "MARBLE", foyer: "MARBLE", trophy: "MARBLE", dining: "MARBLE", landing: "MARBLE", gallery: "MARBLE", office: "MARBLE",
     salon: "GLASS", atrium: "GLASS", aviary: "GLASS", terrace: "OPEN", enclosure: "OPEN" },

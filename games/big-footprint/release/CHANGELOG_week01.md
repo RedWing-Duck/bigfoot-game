@@ -2,6 +2,16 @@
 Build: `dist/big-footprint.html` (single file, runs offline). Branch `claude/penthouse-heist-game-o7k6w5`.
 Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors.
 
+## Playtest fixes (polish build)
+- **P2s:** PT-01 to PT-06 (see `BUGS_week01.md`).
+  - Bare `listen` works everywhere.
+  - `show` works like `give`, and "drop X in Y" works like "use X on Y".
+  - A thing named from another room gets the free "Nothing like that around here.".
+  - At most two extra lines follow a room's text during the escape, and the clock warnings print without a band line or turn feedback on the same turn.
+  - `x stairs` works on the landing.
+  - New: an extended coverage test (bare verbs, social verbs, prepositions, nouns from other rooms).
+- **P3s:** PT-07 to PT-15, pending.
+
 ## 10/10 polish pass (GDD rev 3, Script rev 3 additions)
 Depth only. The map, items, puzzles, solutions, win and lose rules and clock values are unchanged. The verified walkthrough still wins with 7 turns to spare, and the W2 route with 4, with the same clock value at every step.
 
@@ -37,7 +47,7 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 
 ## Known issues
 - **P1/P2:** none known. The polish build hasn't had its QA passes yet (see `rev3/QA_FOCUS_week01_polish.pdf`).
-- **Tests:** 38 tests. All 14 polish tests pass: coverage (4,899 commands), the brief's spot checks, state and feel. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Tests:** 40 tests. All 16 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage and the P2 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|

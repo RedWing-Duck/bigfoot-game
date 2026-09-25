@@ -444,6 +444,8 @@ test("Polish B: clock bands and turn feedback never repeat back to back; bands f
   assert.ok(said.every(l => fb.includes(l)), "feedback follows a reply that changed nothing");
   for (let i = 1; i < said.length; i++) assert.notEqual(said[i], said[i - 1]);
   g.run("S.count.clock = 3"); g.type("look");
+  assert.ok(!g.lines().slice(-3).some(l => /Footsteps on the stairs|A shadow on the terrace/.test(l)), "PT-05: no band line on a warning turn");
+  g.type("look");
   assert.ok(g.lines().slice(-4).some(l => ["Footsteps on the stairs below, and every step shakes the roof.", "A shadow on the terrace that isn't yours. It moves when you don't."].includes(l)), "BAND_C on the roof");
 });
 
@@ -535,4 +537,73 @@ test("Polish C: graded wrong attempts (E2) and alibi lines by checkpoint (E4)", 
   assert.ok(g.lines().includes("Right song. Wrong words. What was it called? She sang it every Sunday."));
   const p = play(...TOUR, "s", "open aviary", "s", "s", "say peacocks");
   assert.match(p.last(), /As if on cue, a scream echoes down the hall/, "R7 alibi line");
+});
+
+// ---- Playtest QA (PT-xx): the wider coverage the playtest asked for
+test("Playtest: extended coverage: bare verbs, social verbs, prepositions, nouns from other rooms", t => {
+  const g = bigfoot(), nouns = g.get("G.nouns"), rooms = g.get("G.rooms"), fails = [];
+  const place = (room, phase, extra = "") => g.run(`S.over = false; S.room = ${JSON.stringify(room)}; S.flags = {}; S.count = { turns: 5, strikes: 0, clock: 18, secrets: 0 };
+    S.loc.don = ${phase === "TOUR" ? JSON.stringify(room) : "null"}; S.loc.nando = null; S.loc.coin = "player"; S.count.leg = 14;
+    G.events.forEach((e, i) => { if (!e.repeat) S.fired[i] = true; });   // arrivals, greetings and endings already done: we test the reply only
+    ${phase === "ESCAPE" ? "S.flags.escape = true; S.mark.tick = 5; S.loc.don = null;" : "S.flags.q1 = true; S.flags.q2 = true;"} ${extra}; globalThis.__snap = JSON.stringify(S);`);
+  const tryIt = (label, cmd, ok = out => !out.some(l => BAD.some(b => b.test(l)))) => {
+    g.run("S = JSON.parse(__snap)"); const k = g.lines().length, t0 = g.get("S.count.turns"); g.type(cmd);
+    const out = g.lines().slice(k + 1);
+    if (!out.length || !ok(out, g.get("S.count.turns") - t0)) fails.push(`${label}: "${cmd}" -> ${out.join(" / ") || "(nothing)"}`);
+  };
+  const phases = room => ["terrace", "enclosure"].includes(room) ? ["ESCAPE"] : ["TOUR", "ESCAPE"];
+  for (const room of Object.keys(rooms)) for (const phase of phases(room)) {
+    place(room, phase);
+    // 1. every info and Tier 1 verb with no noun
+    for (const v of ["search", "smell", "listen", "take", "touch", "push", "pull", "open", "close", "knock", "sit", "climb"]) tryIt(`${phase} ${room}`, v);
+    // 2. Tier 2 verbs on the NPC who's here
+    if (phase === "TOUR") for (const c of ["show don", "show card to don", "give card to don", "give don", "show plaque to don", "ask don", "ask don about piano", "tell don about family", "talk to don"])
+      tryIt(`${phase} ${room}`, c);
+    // 4. nouns from other rooms: the free not-here line
+    const here = Object.entries(nouns).filter(([, n]) => n.at === room || n.at === "any").flatMap(([, n]) => n.words);
+    const next = Object.values(rooms[room].exits || {}).map(x => typeof x === "string" ? x : x.to).flatMap(r => rooms[r].words || []);
+    for (const [id, n] of Object.entries(nouns)) {
+      if (n.at === room || n.at === "any") continue;
+      const w = [...n.words].sort((a, b) => b.length - a.length)[0];
+      if ([...here, ...next, "stairs", "staircase", "staircases", "step", "steps", "door", "fountain", "coins", "coin", "card", "photos", "gate"].some(x => ` ${w} `.includes(` ${x} `) || ` ${x} `.includes(` ${w} `))) continue;
+      for (const v of ["examine", "open"]) tryIt(`${phase} ${room} (${id} is elsewhere)`, `${v} ${w}`, (out, cost) => out.length === 1 && out[0] === "Nothing like that around here." && cost === 0);
+    }
+  }
+  // 2. Nando at a checkpoint: talk, ask, tell, examine are free and never confused
+  for (const room of ["gallery", "foyer"]) {
+    place(room, "ESCAPE", `S.flags.checkpoint = true; S.mark.stop = 5; S.loc.nando = ${JSON.stringify(room)};`);
+    for (const c of ["talk to nando", "ask nando", "tell nando about giraffe", "x nando", "talk"]) tryIt(`checkpoint ${room}`, c, (out, cost) => cost === 0 && !out.some(l => BAD.some(b => b.test(l)) || l.startsWith("CAUGHT")));
+  }
+  // 3. prepositional forms
+  for (const [room, cmds] of [["atrium", ["drop coin in fountain", "put coin in hippo"]], ["dining", ["put card in bowl", "look under table", "look behind portraits"]],
+    ["gallery", ["look behind portraits"]], ["office", ["look in humidor", "look under desk"]]])
+    for (const phase of ["TOUR", "ESCAPE"]) { place(room, phase); for (const c of cmds) tryIt(`${phase} ${room}`, c); }
+  // 5. every WORDS entry as "look at <words>"
+  for (const [id, n] of Object.entries(nouns)) {
+    const phase = (n.examine || []).some(l => !l[0] || l[0] === "TOUR" || l[0].startsWith("TOUR&")) && !["terrace", "enclosure"].includes(n.at) ? "TOUR" : "ESCAPE";
+    if (!(n.examine || []).some(l => !l[0] || l[0] === phase || l[0].startsWith(phase + "&"))) continue;
+    place(n.at === "any" ? "foyer" : n.at, phase);
+    for (const w of n.words) tryIt(`${phase} ${id}`, `look at ${w}`);
+  }
+  assert.deepEqual(fails, []);
+});
+
+test("Playtest P2s: PT-01 to PT-06", () => {
+  const g = bigfoot();
+  g.type("listen");
+  assert.equal(g.last(), "Violins, very softly. The music of people who have never once had to hurry.", "PT-01");
+  g.type(...TOUR.slice(0, 11), "show coin to don");
+  assert.equal(g.last(), "He folds your fingers back over it. \"A dividend is not a loan.\"", "PT-02");
+  g.type("w", "x stairs");
+  assert.match(g.last(), /^Twelve steps on the family side/, "PT-06");
+  g.type("w", "n", "drop coin in fountain");
+  assert.equal(g.get("S.count.strikes"), 1, "PT-03: a strike on the tour");
+  const e = toEscape(); e.type("e");
+  const t0 = e.get("S.count.turns"); e.type("open jaguar gate");
+  assert.equal(e.last(), "Nothing like that around here.", "PT-04"); assert.equal(e.get("S.count.turns"), t0, "PT-04: free");
+  const r = toEscape(); r.type("open giraffe gate", "s", "s");
+  const extras = r.lines().slice(r.lines().lastIndexOf("Atrium") + 2);
+  assert.equal(extras.length, 2, "PT-05: at most two extra lines: " + extras.join(" / "));
+  const w = toEscape(); for (let i = 0; i < 12; i++) w.type("dance");
+  assert.equal(w.last(), "Somewhere behind you, a thud rattles the chandeliers.", "PT-05: no feedback or band on a warning turn");
 });

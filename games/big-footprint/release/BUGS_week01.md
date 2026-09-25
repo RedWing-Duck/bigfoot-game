@@ -42,3 +42,16 @@ Merged from the three QA passes (originals in `qa/`), plus one bug found during 
 **Not a bug (GDD note from Critical Path QA):** entering R11 costs no turn, so the critical path ends with 7 turns to spare, not 6. GDD section 9 is corrected in revision 2.
 
 **Editor note:** the ledger, manifest and photos take lines no longer show in play. BR-02 answers "You already have that.", and secrets can't be dropped. The lines are kept in the Script and build, as written.
+
+## Polish build: playtest QA (`qa/PLAYTEST_QA_week01_polish.txt`)
+| Bug ID | Sev | Summary | Status | Fix (one line) |
+|---|---|---|---|---|
+| PT-01 | P2 | Bare `listen` got the confused line in R1-R3 | Fixed | Room listen lines from the R1-R3 nouns; QA's tour fallback line |
+| PT-02 | P2 | `show X to don` said nobody was there | Fixed | `show` works like `give` (same replies) |
+| PT-03 | P2 | `drop coin in fountain` on the tour: "not carrying that" | Fixed | "drop X in Y" means "use X on Y" in both phases (a strike on the tour) |
+| PT-04 | P2 | A noun from another room got a category reply and cost a turn | Fixed | Cause: R12's bars list "gate", so "jaguar gate" matched it. Now a longer phrase naming something elsewhere gets the free not-here line. Also removed the rev 2 tour-gate reply, which could only misfire (the gates are on the terrace) |
+| PT-05 | P2 | Extra lines pile up in ESCAPE | Fixed | At most 2 extra lines per room (Nando's greeting counts; checkpoint lines, then marks, then the band); no band or feedback on a warning turn |
+| PT-06 | P2 | `x stairs` on the landing found nothing | Fixed | "stairs" examines there; `climb stairs` still walks down |
+| PT-07 to PT-15 | P3 | | Open | Waiting for "go on P3s" |
+
+Root cause for the suite: the extended coverage test now tries every info and Tier 1 verb with no noun in every room and both phases, the Tier 2 verbs on the NPCs present (Nando included, free at a checkpoint), prepositional forms, every noun named from another room (free not-here line), and "look at" + every WORDS entry.

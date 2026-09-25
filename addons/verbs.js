@@ -18,7 +18,7 @@
               any:[COND, ...]  at least one of them passes
               only:"a|b c"  every word typed after the verb is one of these words (or nothing was typed)
    "look <thing>" examines it ("look around" still looks); "look under/behind/in <thing>"
-   searches it; "pick up <thing>" takes it; "climb <stairs word or direction>" walks. The echo of what the
+   searches it; "pick up <thing>" takes it; "drop X in Y" uses X on Y; "climb <stairs word or direction>" walks. The echo of what the
    player typed never turns [id] into a name.
    Input: punctuation is dropped from typed words (letters, digits, hyphens and
           apostrophes stay), so "say giraffe!" and "north." work. List this add-on
@@ -60,6 +60,8 @@
       if (v === "look" && ["under", "behind", "in", "inside", "beneath"].includes(w0) && rest.length) return exec("search", rest.join(" ")), true;
       if (v === "look" && a && !["around", "room", "here"].includes(a)) return exec("examine", a), true;
       if (v === "take" && w0 === "up" && rest.length) return exec("take", rest.join(" ")), true;   // "pick up the grapes"
+      const into = a.split(" ").findIndex(w => w === "in" || w === "into");
+      if (v === "drop" && into > 0) return exec("use", a.split(" ").filter((w, i) => i !== into).join(" ")), true;   // "drop coin in hippo" = use it on
       const way = (v === "go" || v === "climb") && (G.rooms[S.room].ways?.[a] || ALIAS[a] || (v === "climb" && isDir(a) && a));
       if (way && (way !== a || v === "climb") && isDir(way)) return exec("go", way), true;   // "go upstairs", "climb stairs"
       if (verbs.has(v) && answer(v, a)) return true;

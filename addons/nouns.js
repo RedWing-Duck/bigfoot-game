@@ -21,8 +21,11 @@
             on a thing with "strike" runs the strike effect (strikeWith verbs: when a strike
             thing is named anywhere in the line, "use coin on hippo")
           tourFree: true   commands this add-on answers cost no turn while keys.TOUR passes
-          tails: { room: [[key, text, group?, "once"?], ...] }   ESCAPE: printed after the room's
-            description, every passing line in order (one per group; "once": once a game)
+          tails: { room: [{ key, text, group?, once?, top? }, ...] }   ESCAPE: extra lines after
+            the room's description (one per group; once: once a game; top: printed first).
+            They wait for the end of the turn, then the band line: at most G.extras lines,
+            counting any of G.npcLines printed that turn. No band line on a turn where one of
+            G.warnings prints; no turn feedback then either.
           bands: { rooms: { room: TYPE }, lines: { KEY: { TYPE: [TEXT, TEXT] } } }   one line after the
             tails, from the first passing KEY; each cell alternates its two lines
           feedback: [TEXT, ...]   ESCAPE: after a turn-costing reply that changed nothing (a
@@ -68,6 +71,9 @@
     Object.keys(N).filter(visible).forEach(id => add(id, "noun", N[id].words, N[id].at === "any" ? 1 : 3));
     [...inv(), ...at(G.items)].forEach(id => add(id, "item", phrases(G.items)(id), 2));
     at(G.npcs).forEach(id => add(id, "npc", phrases(G.npcs)(id), 4));
+    // things somewhere else: only a longer phrase than anything here can pick them ("jaguar gate" in the enclosure)
+    Object.keys(N).filter(id => !visible(id)).forEach(id => add(id, "away", N[id].words, 0));
+    Object.keys(G.items).filter(id => S.loc[id] !== "player" && S.loc[id] !== S.room).forEach(id => add(id, "away", [G.items[id].name, ...(G.items[id].aliases || [])], 0));
     return hits;
   };
   const best = hits => hits.sort((x, y) => y.len - x.len || y.rank - x.rank)[0];
@@ -103,12 +109,15 @@
     end0([{ text: txt(v) + "\n\n" + rep + txt(G.report.after || "") }]);
   };
   const rotate = L => { const k = JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[n % L.length]; };
-  let pending = false;
-  const feedback = () => { if (G.feedback && key("ESCAPE") && !FREE.includes(verb)) print(txt(rotate(G.feedback))); };
+  let pending = false, fb = false, extras = null, npcLines = 0, warned = false;
+  const feedback = force => { if (G.feedback && key("ESCAPE") && (force || !FREE.includes(verb))) fb = true; };   // printed at the end of the turn
   const run0 = run;
-  run = e => { run0(e); if (pending) { pending = false; feedback(); } };
+  run = e => { run0(e); if (pending) { pending = false; feedback(true); } };
   const plain = print;   // the engine's "you can't go that way", reworded by the messages add-on
-  print = (t, c) => { plain(t, c); if (t === G.nowhere && key("ESCAPE")) { verb = "go"; feedback(); } };
+  print = (t, c) => { plain(t, c);
+    if (t === G.nowhere && key("ESCAPE")) feedback(true);
+    if ((G.warnings || []).includes(t)) warned = true;
+    if ((G.npcLines || []).includes(t)) npcLines++; };
   // after the room text in ESCAPE: tails, then Big Tony's band line
   const band = () => { const B = G.bands, type = B?.rooms[S.room], k = type && Object.keys(B.lines).find(key);
     return k && B.lines[k][type] && txt(rotate(B.lines[k][type])); };
@@ -116,14 +125,23 @@
   CMDS.look = a => {
     look0(a);
     if (!key("ESCAPE")) return;
-    const done = new Set();
-    for (const [k, t, group, once] of G.tails?.[S.room] || []) {
-      const id = S.room + ":" + t.slice(0, 30);
-      if (!key(k) || (group && done.has(group)) || (once && S.nouns.once.includes(id))) continue;
-      if (group) done.add(group); if (once) S.nouns.once.push(id);
-      print(txt(t));
+    const done = new Set(), list = [];
+    for (const T of G.tails?.[S.room] || []) {
+      const id = S.room + ":" + T.text.slice(0, 30);
+      if (!key(T.key) || (T.group && done.has(T.group)) || (T.once && S.nouns.once.includes(id))) continue;
+      if (T.group) done.add(T.group);
+      list.push({ ...T, id });
     }
-    const b = band(); if (b) print(b);
+    extras = [...list.filter(T => T.top), ...list.filter(T => !T.top)];   // checkpoint lines first, then marks, then the band
+  };
+  const endTurn = () => {
+    if (extras) {
+      let room = (G.extras ?? 9) - npcLines;
+      for (const T of extras) { if (room <= 0) break; if (T.once) S.nouns.once.push(T.id); print(txt(T.text)); room--; }
+      const b = room > 0 && !warned && band(); if (b) print(b);
+    }
+    if (fb && !warned) print(txt(rotate(G.feedback)));
+    extras = null; fb = false; npcLines = 0; warned = false;
   };
   const react = id => { const first = !S.nouns.seen.includes(id);
     if (first) S.nouns.seen.push(id);
@@ -145,17 +163,17 @@
     if (v === "wait") return key("ESCAPE") && say(pick(ANY.wait));
     if (!a) {   // the verb alone: this room's line, then the lone-verb line, then anywhere
       if (v === "examine" || v === "go") return;
-      if (v === "listen" && !pick(RV[S.room][v]) && key("ESCAPE") && band()) return print(band()), true;
+      if (v === "listen" && !pick(RV[S.room][v]) && key("ESCAPE")) { const b = band(); if (b) return print(b), true; }
       const own = pick(RV[S.room][v]);
       return own ? say(own) : say(pick(ALONE[v]) || pick(ANY[v]), true);
     }
     if (v === "go" && (DIRS[a] || Object.values(DIRS).includes(a) || (G.rooms[S.room].exits || {})[a])) return;
-    const hits = scan(a), h = best([...hits]);
+    const all = scan(a), found = best([...all]), hits = all.filter(x => x.kind !== "away"), h = found?.kind === "away" ? null : found;
     if (!h) {
       if (v === "examine" && nextDoor(a)) return true;
-      const r = pick(RV[S.room][v], a);
+      const r = !found && pick(RV[S.room][v], a);
       if (r && r[2]) return say(r);                     // "swim in the fountain": a room line that names its own object
-      if (CORE.includes(v)) return;   // the engine answers its own commands
+      if (CORE.includes(v) && !found) return;   // the engine answers its own commands
       return print("You don't see that."), refund(), true;
     }
     const t = thing(h);
@@ -186,6 +204,7 @@
     state: { turn: {}, notes: {}, seen: [], once: [] },
     conditions: { key: v => key(v), noted: o => Object.entries(o).every(([k, v]) => S.nouns.notes[k] === v) },
     effects: { rotate: L => print(txt(rotate(L))), ladder: L => print(txt(ladder(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
+    afterTurn: endTurn,
     before(v, a) {
       // a checkpoint: anything that costs a turn and reached here fails it. Note why, and let CAUGHT say it
       if (G.caught && test(G.caught.if) && !FREE.includes(v)) return (S.nouns.notes.CAUGHT_BY ??= G.caught.by(v, a)), true;
