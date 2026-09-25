@@ -206,12 +206,12 @@ test("big-footprint C: Script text: intro, unknown-command rotation, game-over p
 const WALKTHROUGH = [
   ["north", null], ["west", null], ["east", null], ["east", null], ["west", null],
   ["north", null, "Sunday gravy?"], ["say both", null, "Both!"], ["south", null], ["up", null],
-  ["east", null, "bookstore called"], ["say dog-eared page", null, "(Received: GOLD COIN)"],
+  ["east", null, "bookstore called"], ["say dog-eared page", null, "He flips you a GOLD COIN."],
   ["west", null], ["west", null], ["north", null], ["north", null], ["north", 18],
   ["open giraffe gate", 17, "Perfect alibi: GIRAFFE."], ["south", 16], ["south", 15],
-  ["use gold coin on hippo", 14, "(Received: SHIPPING MANIFEST)"], ["south", 13, "Why are you up here?"],
+  ["use gold coin on hippo", 14, "You fish out the SHIPPING MANIFEST. Secrets: 1 of 3."], ["south", 13, "Why are you up here?"],
   ["run", 12, "You bolt."], ["east", 11], ["down", 10, "Why are you up here?"], ["say giraffe", 9, "Nando swears and runs."],
-  ["push thirteenth step", 8, "(Received: DEAL PHOTOS)"], ["south", 7]
+  ["push thirteenth step", 8, "holds the DEAL PHOTOS. Secrets: 2 of 3."], ["south", 7]
 ];
 const walk = (g, steps) => steps.forEach(([cmd, clock, says], i) => {
   const n = g.lines().length; g.type(cmd);
@@ -232,7 +232,7 @@ test("regression: verified walkthrough, steps 1-28, ends CLEAN GETAWAY 2/3", () 
 
 test("regression: W2 branch (26a-26c) ends CLEAN SWEEP 3/3", () => {
   const g = bigfoot();
-  walk(g, [...WALKTHROUGH.slice(0, 26), ["east", 7], ["play cielito lindo", 6, "(Received: LEDGER)"], ["west", 5], ["south", 4]]);
+  walk(g, [...WALKTHROUGH.slice(0, 26), ["east", 7], ["play cielito lindo", 6, "holding a LEDGER bound in rubber bands. Secrets: 3 of 3."], ["west", 5], ["south", 4]]);
   assert.ok(g.lines().includes("Somewhere behind you, a thud rattles the chandeliers."), "clock 6 warning");
   g.type("down");
   assert.match(g.last(), /^CLEAN SWEEP[\s\S]*3\/3\. Perfect run\.$/);
@@ -277,4 +277,30 @@ test("P2s: BR-02 free 'already have', ED-01 escalating quiz lines, ED-02/03 stat
   assert.match(h.last(), /gapes, jaw hanging open/);
   h.type("help");
   assert.match(h.last(), /In a tight spot: run \(works once\)\./);
+});
+
+test("P3s: parser (BR-03/05/06/09/10/11), nudges (BR-08, CP-02/03), no confused line before CAUGHT (CP-01)", () => {
+  const g = bigfoot();
+  g.type("[don]");
+  assert.ok(g.lines().includes("> [​don]"), "BR-11: the echo stays literal");
+  g.type("n", "look at staircase");
+  assert.match(g.last(), /twelve steps up/, "BR-05, ED-19");
+  g.type("w", "e", "e", "w", "n", "say");
+  assert.equal(g.get("S.count.strikes || 0"), 0, "BR-03: an empty say is no strike");
+  g.type("talk to don");
+  assert.match(g.last(), /Sunday gravy\?"$/, "BR-09");
+  g.type("say definitely not both");
+  assert.equal(g.get("S.count.strikes"), 1, "BR-04");
+  g.type("say both", "s", "go upstairs");
+  assert.equal(g.get("S.room"), "landing", "BR-06");
+  g.type("e", "say dog-eared page", "give coin to don");
+  assert.match(g.last(), /Nothing here wants it/, "BR-10");
+  g.type("w", "w", "n", "n", "n");
+  const t = g.get("S.count.turns");
+  g.type("run", "open gate", "x lemurs");
+  assert.equal(g.get("S.count.turns"), t, "BR-08, CP-02: nudges are free");
+  assert.equal(g.last(), "Lemurs pour out of the dark.", "BR-07");
+  g.type("s", "s", "s", "say jaguar");
+  assert.match(g.lines().at(-1), /^CAUGHT/);
+  assert.ok(!g.lines().at(-2).startsWith("You try that"), "CP-01");
 });
