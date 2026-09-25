@@ -2,6 +2,14 @@
 Build: `dist/big-footprint.html` (single file, runs offline). Branch `claude/penthouse-heist-game-o7k6w5`.
 Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there are no chat contributors.
 
+## Playtest round 2 fixes (polish build)
+- **P2s:** NB-01 to NB-04.
+  - A bare `say` at a checkpoint is a free repeat.
+  - Small talk at Q1 gets a redirect instead of a strike.
+  - shout / yell / scream / holler and "tell nando <text>" give alibis.
+  - Free meta commands: where, exits, map, what now, save, back.
+- **P3s:** NB-05 to NB-09, next round.
+
 ## Playtest fixes (polish build)
 - **P2s:** PT-01 to PT-06 (see `BUGS_week01.md`).
   - Bare `listen` works everywhere.
@@ -55,7 +63,7 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 
 ## Known issues
 - **P1/P2:** none known. The polish build hasn't had its QA passes yet (see `rev3/QA_FOCUS_week01_polish.pdf`).
-- **Tests:** 41 tests. All 17 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, and the P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Tests:** 42 tests. All 18 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, and round 2's P2 check. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|

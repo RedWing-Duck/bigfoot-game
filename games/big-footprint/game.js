@@ -150,6 +150,7 @@ const T = {
     after: "Nando is gone, shouting somewhere far away." },
   q1: { prompt: "\"So tell me, Walter. Sunday dinner: my mother's pozole or my nonna's Sunday gravy?\"",
     right: "He laughs and slaps the table. \"Both! Now you sound like family. Come, upstairs, we talk business. South, then up, then east.\" He's already at the foot of the stairs.",   // + leg cue
+    redirect: "The Don smiles. \"Compliments later, Walter. Pozole or gravy?\"",   // NB-02 (QA text)
     wrong: ["\"You'd choose? In this house?\" His smile tightens. He asks again, slower. \"Sunday dinner. Pozole or gravy?\"",
       "The smile is gone. \"Twice now, Walter. I don't like three.\" He asks one more time. \"Sunday dinner. Pozole or gravy?\""] },
   q2: { prompt: "\"Remind me, what's your bookstore called?\"",
@@ -599,6 +600,14 @@ const ENDINGS = {
   })
 };
 
+const Q1_WORDS = "pozole|gravy|soup|sauce|mother|mama|nonna|grandmother|both|either|neither|one|choose|pick";   // NB-02: an attempt at an answer
+const CHECKPOINT_SAY = [
+  { if: { flag: "checkpoint", said: "" }, add: { turns: -1 }, rotate: T.nando.repeat },   // NB-01: a bare "say" is free, like talking to him (D3)
+  alibi("peacocks", "peacock|peacocks"), alibi("giraffe", "giraffe|giraffes"), alibi("jaguar", "jaguar|jaguars"),   // QA-01: singular works too
+  ...["peacocks", "giraffe", "jaguar"].flatMap(a => [   // D4: why the answer failed
+    { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, max: { [a]: 0 } }, note: { CAUGHT_BY: "UNRELEASED" } },
+    { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, min: { [a]: 2 } }, note: { CAUGHT_BY: "USED" } }]),
+  { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "OTHER" } }];   // CP-01
 const DOWN_EMPTY = [{ if: { min: { secrets: 1 } }, text: T.downOne }, T.downEmpty];   // PT-14
 
 const G = {
@@ -610,8 +619,10 @@ const G = {
     upstairs: "up", downstairs: "down",
     check: "examine", inspect: "examine", study: "examine", snatch: "take", pick: "take", catch: "take",   // GDD 12.3
     kick: "push", shove: "push", step: "push", stand: "push", lean: "sit", attack: "hit", punch: "hit", hum: "sing",
-    curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter", show: "use" },   // PT-02: show works like give   // verbs add-on
-  free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen"],   // GDD 12.1 D2
+    curse: "swear", hi: "hello", thanks: "thank", compliment: "flatter", show: "use",   // PT-02: show works like give
+    shout: "say", yell: "say", scream: "say", holler: "say", return: "back", stuck: "hint", what: "hint", load: "save", undo: "save", restore: "save",   // NB-03, NB-04
+    directions: "exits" },   // verbs add-on
+  free: ["look", "examine", "inventory", "status", "hint", "search", "smell", "listen", "where", "exits", "ways", "map", "save"],   // GDD 12.1 D2; NB-04
   fallback: T.fallback,
   messages: {   // messages add-on: the engine's own lines, reworded
     [T.fallback]: { rotate: T.huh },
@@ -659,6 +670,7 @@ const G = {
       on: { Say: [
         { if: { not: { flag: "q1" }, said: "" }, say: T.q1.prompt },   // BR-03: no words, no strike
         { if: { not: { any: [{ flag: "q1" }, { said: "not|neither|nor|no|never" }] }, said: "both|pozole and gravy|gravy and pozole|each|two of them" }, set: "q1", say: T.q1.right },   // BR-04
+        { if: { not: { any: [{ flag: "q1" }, { said: Q1_WORDS }] } }, add: { turns: -1 }, say: T.q1.redirect },   // NB-02: small talk, no strike
         { if: { not: { flag: "q1" } }, ...STRIKE, note: { STRIKE3_BY: "Q1" }, say: [{ if: { min: { strikes: 3 } }, text: "" }, { if: { min: { strikes: 2 } }, text: T.q1.wrong[1] }, T.q1.wrong[0]] } ] } },
     landing: { name: "Upper Landing", desc: desc("landing"), ways: { stairs: "down", staircase: "down", staircases: "down" }, exits: exits("landing", { down: "foyer", west: "gallery", east: "office" }) },   // R6
     gallery: { name: "Gallery Hall", desc: desc("gallery"), exits: exits("gallery", { east: "landing", north: "atrium" }) },                 // R7
@@ -735,18 +747,15 @@ const G = {
         T.don.talk] },
       { if: { said: "nando|guard", min: { cleared: 1 }, not: { here: "nando" } }, say: T.nando.after }],
     ask: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],   // D3
-    tell: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],
+    tell: [{ if: { flag: "checkpoint", only: "nando|guard|about|him" }, add: { turns: -1 }, rotate: T.nando.repeat },   // NB-03: "tell nando <text>" = say <text>
+      ...CHECKPOINT_SAY],
     bribe: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } }, { if: { here: "don" }, say: T.don.social.bribe }],
     flatter: [{ if: { here: "don" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] }, { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
     ...Object.fromEntries(["lie", "shake", "thank", "hug"].map(v => [v, [{ if: { here: "don" }, say: T.don.social[v] }]])),
     run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: [{ if: { in: "foyer" }, text: T.foyerGuard.run }, T.guard.run] },
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "RUN2" } },   // CP-01: a second run goes straight to CAUGHT, no confused line
       { add: { turns: -1 }, say: T.nudge.run }],   // BR-08: free outside a checkpoint
-    Say: [alibi("peacocks", "peacock|peacocks"), alibi("giraffe", "giraffe|giraffes"), alibi("jaguar", "jaguar|jaguars"),   // QA-01: singular works too
-       ...["peacocks", "giraffe", "jaguar"].flatMap(a => [   // D4: why the answer failed
-        { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, max: { [a]: 0 } }, note: { CAUGHT_BY: "UNRELEASED" } },
-        { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, min: { [a]: 2 } }, note: { CAUGHT_BY: "USED" } }]),
-      { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "OTHER" } }],   // CP-01
+    Say: CHECKPOINT_SAY,   // QA-01, D4, CP-01, NB-01
     hint: [   // Script E1: each ladder keeps its own place (nouns add-on's ladder effect)
       { if: { flag: "checkpoint" }, ladder: T.ladder.checkpoint },
       { if: { any: [{ in: "dining", not: { flag: "q1" } }, { in: "office", not: { flag: "q2" } }] }, ladder: T.ladder.question },
@@ -1039,3 +1048,20 @@ for (const [id, k] of Object.entries(MARKS)) {
   const L = NOUNS[id].examine, base = L.find(l => l[0] === "ESCAPE")[1], mark = L.find(l => l[0] === k);
   mark[1] = base + " " + mark[1];
 }
+
+// ---- NB-04: meta commands (QA text), all free. "back" at a checkpoint stays a move: CAUGHT
+const escAgain = r => r === "terrace" ? terrace.map(v => ({ ...v, if: { ...v.if, in: r } }))
+  : [...(AGAIN[r] || [])].reverse().map(([k, t]) => ({ if: { key: k ? "ESCAPE&" + k : "ESCAPE", in: r }, text: t }));
+const tourAgain = r => typeof T.room[ROOM[r]].revisit === "string" ? [{ if: { in: r }, text: T.room[ROOM[r]].revisit }] : [];
+const BACK = [{ if: { not: { any: [ESC, { flag: "checkpoint" }] } }, add: { turns: -1 }, say: T.tourBlock },
+  { if: { not: { flag: "checkpoint" } }, add: { turns: -1 }, say: "Back which way? Name a direction, or a landmark." }];
+Object.assign(G.on, {
+  where: [{ say: Object.keys(ROOM).flatMap(r => [...escAgain(r), ...tourAgain(r)].map(v => ({ ...v, text: G.rooms[r].name + "\n" + v.text }))) }],
+  exits: [{ if: TOUR, say: Object.keys(ROOM).map(r => ({ if: { in: r }, text: "Exits: " + Object.keys(G.rooms[r].exits || {}).join(", ") })) },
+    { say: Object.keys(ROOM).flatMap(r => escAgain(r).map(v => ({ ...v, text: "No signs, no arrows. Just landmarks.\n" + v.text }))) }],
+  map: [{ if: TOUR, say: "The Don is the map tonight. Follow him." }, { say: "No map. The tour was the map." }],
+  save: [{ say: "No saves, no do-overs. Tonight counts." }],
+  back: BACK, go: BACK.map(e => ({ ...e, if: { ...e.if, said: "back" } })),
+  help: G.on.hint.map(e => ({ ...e, if: { ...e.if, said: "me" } }))   // "help me" = the next hint
+});
+G.on.ways = G.on.exits;   // "ways out"

@@ -572,7 +572,7 @@ test("Playtest: extended coverage: bare verbs, social verbs, prepositions, nouns
   // 2. Nando at a checkpoint: talk, ask, tell, examine are free and never confused
   for (const room of ["gallery", "foyer"]) {
     place(room, "ESCAPE", `S.flags.checkpoint = true; S.mark.stop = 5; S.loc.nando = ${JSON.stringify(room)};`);
-    for (const c of ["talk to nando", "ask nando", "tell nando about giraffe", "x nando", "talk"]) tryIt(`checkpoint ${room}`, c, (out, cost) => cost === 0 && !out.some(l => BAD.some(b => b.test(l)) || l.startsWith("CAUGHT")));
+    for (const c of ["talk to nando", "ask nando", "tell nando", "x nando", "talk", "say"]) tryIt(`checkpoint ${room}`, c, (out, cost) => cost === 0 && !out.some(l => BAD.some(b => b.test(l)) || l.startsWith("CAUGHT")));
   }
   // 3. prepositional forms
   for (const [room, cmds] of [["atrium", ["drop coin in fountain", "put coin in hippo"]], ["dining", ["put card in bowl", "look under table", "look behind portraits"]],
@@ -632,4 +632,28 @@ test("Playtest P3s: PT-07 to PT-15", () => {
   assert.equal(w.last(), "Your thumb hovers over the button. One secret isn't a case. It's a rumor. Go get another.", "PT-14");
   w.type("n", "push 13th step", "e", "w");
   assert.ok(!w.lines().slice(-6).some(l => l.startsWith("You see:")), "PT-13: no engine item list under the revisit");
+});
+
+test("Playtest round 2 P2s: NB-01 to NB-04", () => {
+  const cp = toEscape(); cp.type("s", "s", "s");
+  const t0 = cp.get("S.count.turns");
+  cp.type("say", "tell nando", "where am i", "exits", "map", "what now", "help me", "undo");
+  assert.equal(cp.get("S.over"), false, "NB-01, NB-04: free at a checkpoint");
+  assert.equal(cp.get("S.count.turns"), t0);
+  cp.type("go back");
+  assert.match(cp.last(), /^CAUGHT/, "NB-04: going back at a checkpoint is still a move");
+  const q = play("n", "w", "e", "e", "w", "n", "say this smells amazing");
+  assert.equal(q.last(), "The Don smiles. \"Compliments later, Walter. Pozole or gravy?\"", "NB-02");
+  assert.equal(q.get("S.count.strikes || 0"), 0);
+  q.type("say gravy");
+  assert.equal(q.get("S.count.strikes"), 1, "NB-02: an answer still counts");
+  const a = toEscape(); a.type("open giraffe gate", "s", "s", "s", "tell nando the giraffe is loose");
+  assert.equal(a.get("S.flags.checkpoint || false"), false, "NB-03: tell = say");
+  const b = toEscape(); b.type("open jaguar gate", "s", "s", "s", "shout jaguar!");
+  assert.equal(b.get("S.flags.checkpoint || false"), false, "NB-03: shout = say");
+  const m = play("n", "where am i", "exits");
+  assert.match(m.lines().at(-3), /^Grand Foyer\nThe twin staircases/, "NB-04 where");
+  assert.equal(m.last(), "Exits: south, west, east, north, up", "NB-04 exits (tour)");
+  const e = toEscape(); e.type("back");
+  assert.equal(e.last(), "Back which way? Name a direction, or a landmark.", "NB-04 back (escape)");
 });

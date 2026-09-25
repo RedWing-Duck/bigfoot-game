@@ -63,3 +63,12 @@ Merged from the three QA passes (originals in `qa/`), plus one bug found during 
 | PT-15 | P3 | Animal marks replaced the whole description | Fixed | Base line + mark for the banister, palms, torn portrait, wallpaper, garden; state changes (giraffe, jaguar, peacocks, aviary door, feathers, vase) still replace |
 
 Root cause for the suite: the extended coverage test now tries every info and Tier 1 verb with no noun in every room and both phases, the Tier 2 verbs on the NPCs present (Nando included, free at a checkpoint), prepositional forms, every noun named from another room (free not-here line), and "look at" + every WORDS entry.
+
+## Polish build: playtest QA round 2 (`qa/PLAYTEST_QA_round2_week01_polish.txt`)
+| Bug ID | Sev | Summary | Status | Fix (one line) |
+|---|---|---|---|---|
+| NB-01 | P2 | A bare `say` at a checkpoint was CAUGHT | Fixed | Nando repeats his question; free, the checkpoint stays open |
+| NB-02 | P2 | Small talk at Q1 cost a strike | Fixed | Only a "say" with an answer word counts; anything else gets QA's redirect line, no strike |
+| NB-03 | P2 | Roleplayed alibis didn't work | Fixed | shout, yell, scream, holler = say; "tell nando <text>" at a checkpoint = say <text> (a bare "tell nando" still repeats, free) |
+| NB-04 | P2 | Meta commands got the confused line | Fixed | where (am i), exits / directions / ways out, map, what now / stuck / help me, save / load / undo / restore, back / go back / return, all free, with QA's lines; "go back" at a checkpoint stays a move |
+| NB-05 to NB-09 | P3 | | Open | Next round |
