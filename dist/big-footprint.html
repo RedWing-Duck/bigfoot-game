@@ -215,10 +215,11 @@ const T = {
     giraffe: "You lift the latch. The giraffe ducks out and ambles off toward the stairs, curious about everything. Perfect alibi: GIRAFFE.",
     jaguar: "You swing the gate open and flatten yourself against the wall. The jaguar pours past like smoke and disappears downstairs. Perfect alibi: JAGUAR.",
     already: "It's already open. That animal's somebody else's problem now." },
-  guard: { run: "You bolt. Nando grabs for you, and a lemur lands on his head. By the time he pulls it off, you're long gone.",
-    peacocks: "\"The Don wants the peacocks rounded up! Do you hear them?\" Nando does. He sprints toward the screaming.",
-    giraffe: "\"The giraffe's loose on the staircase! Boss said animals first!\" Nando swears and runs.",
-    jaguar: "\"The JAGUAR is out. It went that way.\" Nando goes very pale and very fast." },
+  guard: {   // E4 R7 (gallery) lines; run keeps rev 2's
+    peacocks: "\"The peacocks are out! The Don wants them rounded up!\" As if on cue, a scream echoes down the hall. Nando sprints toward it.",
+    giraffe: "\"The giraffe is loose, and she's heading for the stairs!\" Nando swears and runs past you toward the balcony, already yelling into his radio.",
+    jaguar: "\"The jaguar is out. It came through the atrium.\" Nando's flashlight beam starts to shake. He backs away from you, then runs the other way.",
+    run: "You bolt. Nando grabs for you, and a lemur lands on his head. By the time he pulls it off, you're long gone.", },
   clock: { 6: "Somewhere behind you, a thud rattles the chandeliers.",
     3: "A roar, closer now. Something is sniffing its way through the palace.",
     1: "The floor shakes. You smell wet dog and bad decisions. Move." },
@@ -236,7 +237,40 @@ const T = {
     L2: "CAUGHT\n\nNando doesn't buy it. A heavy hand, a plastic zip tie, and a long walk back to the Don. \"An investor,\" the Don says. \"I'm so disappointed.\"\n\nGAME OVER.",
     L3: "BIG FOOTPRINT\n\nA shadow the size of a delivery truck fills the doorway. A hand like a catcher's mitt lifts you off your feet, gently, the way you'd pick up a kitten, and carries you back to the broken enclosure to keep him company. Big Tony is lonely. Big Tony is also very, very strong.\n\nGAME OVER."
   },
-  retry: "\n\nType RESTART to try again, or QUIT to walk away."
+  retry: "\n\nType RESTART to try again, or QUIT to walk away.",
+  overs: ["The story's over, detective. RESTART or QUIT.", "The Don's house is quiet now. RESTART or QUIT.", "Case closed. RESTART to reopen it, or QUIT."],   // F3
+  ladder: {   // E1 hint ladders
+    P1: ["This piano only plays one thing.", "He told you whose song this piano keeps. He told you the title over dinner.", "Type \"play\" and the song Mama Rosa sang every Sunday. The Don said its name in the dining hall."],
+    P2: ["Pepita has a price.", "The hippo has expensive taste. So did the Don's handshake.",
+      [{ if: { key: "COIN_DROPPED" }, text: "The Don's coin is how you pay her. You left it somewhere on the tour." }, "Something gold from your pocket, into her mouth."]],
+    P3: ["Two staircases. They aren't the same length.", "Business has one more step than family.", "Push the step the Don told you never to trust."],
+    checkpoint: ["He wants a reason.", "An animal you let loose is a reason. So are fast legs, once.", "\"say\" the name of an animal you released, or \"run\" if you haven't yet."],
+    tour: ["Listen to the Don. Every brag is a clue.", "Look at everything. Touch nothing. Examining is always safe.", "The tour is the map. On the way out, you'll walk it backward."],
+    question: ["He's asking you something. Answer with \"say\".",
+      [{ if: { in: "office" }, text: "It's written on your briefing card." }, "He told you about this house and family in the foyer."],
+      [{ if: { in: "office" }, text: "Read your card: the bookstore has a name." }, "In this house, you never choose."]],
+    escape: ["Walk the tour backward. Grab what you can.", "The guards chase animals first.", "The gates are on the roof and the aviary is right below it. Open one before you meet a guard. Two secrets gets you out."] },
+  graded: {   // E2
+    rightSong: "Right song. Wrong words. What was it called? She sang it every Sunday.",
+    otherSong: ["Pretty. Not hers.", "The piano doesn't so much as click. Not her song.", "You play it well. It doesn't matter. Only one song opens her."],
+    shut: "Pepita keeps her mouth shut. She only opens up for one thing.",
+    card: "Pepita doesn't read.",
+    noCoin: "Your pocket's empty. The coin is wherever you left it.",
+    whichStep: "Which one? The Don was very specific about one of them.",
+    nthStep: n => `That's step ${n}. It's just a step. Keep counting.`,
+    leftStairs: "The family side. Twelve honest steps. Nothing to hide there, apparently.",
+    rightStairs: "Thirteen steps. You need one in particular.",
+    tooHigh: "There are only thirteen. That's the point.",
+    stepDone: "It's already down. The panel is already open." },
+  close: {   // E3: first look at each secret
+    ledger: "You thumb it open. Neat columns of initials and numbers, payments to people with titles instead of names: the Judge, the Captain, the Harbor. Two whole pages are nothing but rubber band orders, thousands of them, because with that much cash you run out of ways to hold it. In the margin, in a different, shakier hand: \"He is not paying me enough for this.\" The accountant.",
+    manifest: "Dates, ports, container numbers, and thousands of cases of \"premium chiles,\" shipping every Tuesday, always to the same three ports, always insured for more than chiles could ever be worth. Somebody at customs is about to have a very long week.",
+    photos: "A yacht at night, strung with party lights. The Don shaking hands with men whose faces would end careers: a uniform, a politician's smile, a banker's watch. On the back of each one, a date and one word in the Don's handwriting: \"Partners.\"" },
+  foyerGuard: {   // E4: the R2 checkpoint's own lines (R7 keeps rev 2's, reworded below)
+    peacocks: "\"Peacocks! All nine, upstairs!\" A scream rings down from the balcony right on cue. Nando takes the stairs three at a time.",
+    giraffe: "You just point up. The giraffe's head hangs over the banister, chewing a lily. Nando looks at it, then at you, then sprints up the stairs shouting into his radio.",
+    jaguar: "\"The jaguar! It went into the dining hall!\" Nando goes very pale and very fast.",
+    run: "You bolt across the marble, skid on the compass rose, and duck behind the left staircase. Nando thunders past, the wrong way, chasing a peacock he thinks is you." },
 };
 
 // ---- Tour: the Don's route (GDD 5). During TOUR only the next leg's exit opens.
@@ -289,11 +323,18 @@ const secret = (flag, item, text) => ({ set: flag, add: { secrets: 1 }, give: it
 
 // ---- Guard checkpoints (GDD 7): the next turn-costing command must be "run" or "say <released animal>"
 const CLEAR = { unset: "checkpoint", add: { cleared: 1 }, move: { nando: null } };
-const alibi = (a, words = a) => ({ if: { flag: "checkpoint", said: words, min: { [a]: 1 }, max: { [a]: 1 } }, ...CLEAR, add: { [a]: 1, cleared: 1 }, say: T.guard[a] });
+const alibi = (a, words = a) => ({ if: { flag: "checkpoint", said: words, min: { [a]: 1 }, max: { [a]: 1 } }, ...CLEAR, add: { [a]: 1, cleared: 1 }, say: [{ if: { in: "foyer" }, text: T.foyerGuard[a] }, T.guard[a]] });
 const release = (a, words) => [{ if: { said: words, max: { [a]: 0 } }, add: { [a]: 1 }, say: T.alibi[a] }, { if: { said: words }, say: T.alibi.already }];
 const unused = (a, name) => [{ if: { min: { [a]: 1 }, max: { [a]: 1 } }, text: name }];
 
 const STEP = "step|steps|stair|stairs|staircase|staircases";
+const ORD = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth"], HIGH = ["fourteenth", "fifteenth", "sixteenth", "seventeenth", "eighteenth", "nineteenth", "twentieth"];
+const GRADED_STEPS = [   // Script E2, P3: counted steps, the two staircases, no number
+  ...ORD.map((o, i) => ({ if: { ...ESC, said: [`${o}|${i + 1}th|${i + 1}st|${i + 1}nd|${i + 1}rd|${i + 1}`, "step"] }, say: T.graded.nthStep(i + 1), feedback: true })),
+  { if: { ...ESC, said: [HIGH.join("|") + "|" + HIGH.map((h, i) => `${i + 14}th|${i + 14}`).join("|"), "step"] }, say: T.graded.tooHigh, feedback: true },
+  { if: { ...ESC, said: "left staircase|left stairs|family stairs|family side|family staircase" }, say: T.graded.leftStairs, feedback: true },
+  { if: { ...ESC, said: "right staircase|right stairs|business stairs|business side|business staircase" }, say: T.graded.rightStairs, feedback: true },
+  { if: { ...ESC, only: "step|steps" }, say: T.graded.whichStep, feedback: true }];
 const HIPPO = "hippo|pepita|fountain|jaw|mouth";
 
 // ---- Script rev 3, section A: nouns (X.<room>.<noun>) and room verbs, keyed by GDD 12.4 (nouns add-on)
@@ -565,6 +606,36 @@ const ROOM_VERBS = {
       listen: [[null, "Nothing in here. That's what worries you. He's out there."]] }
 };
 
+// ---- Script F1: ending variants. The run report (G.report) and the restart prompt follow inside the same block.
+const opener = (text, title, line) => text.replace(title + "\n\n", title + "\n\n" + line + "\n\n");
+const W1 = { a: "The elevator doors slide shut on the roaring, screaming, chattering chaos above. Floors tick by, forty, thirty, twenty, and the thudding fades until all you can hear are the violins. You pat your jacket: two secrets, safe.",
+  b: "The doors open onto the street, the city, and the empty lot next door. It would make a great bookstore.",
+  missing: { P1: "Somewhere up there, a notebook full of rubber bands keeps its secrets. Two was plenty.",
+    P2: "Somewhere up there, Pepita is still sitting on a shipping schedule. Let her. Two was plenty.",
+    P3: "Somewhere up there, the thirteenth step is still keeping the Don's best pictures. Two was plenty." } };
+const W2 = "The doors shut. Floors tick by, and the chaos above fades to violins. Your jacket is so heavy with evidence it practically has a credit rating: ledger, manifest, photos. Every secret the Don had, and he gave you the tour himself. Somewhere upstairs, the Don is still waiting on his plaque.";
+const L1_OPENERS = {
+  RIFLE: "The Don looks at your hand on the glass. \"The rifle, Walter? In my house?\"", PIANO: "\"Nobody touches Mama's piano.\" He says it very quietly.",
+  STEP: "\"The thirteenth step.\" He smiles, and it's the worst smile yet. \"You were listening. Too well.\"", HIPPO: "\"You put your hands on my Pepita?\"",
+  Q1: "\"Choose between my mother and my nonna? In THIS house?\"", Q2: "\"You don't know the name of your own bookstore, Walter?\"" };
+const L3_FIRST = "A shadow the size of a delivery truck fills the doorway.";
+const L3_BY_TYPE = { MARBLE: L3_FIRST, GLASS: "Every pane in the room goes dark at once. Then the doorway does too.", OPEN: "The rain stops hitting you. Something is standing over you, and it's breathing." };
+const L3_TAIL = "Back in the enclosure, he takes everything out of your jacket and lines it up neatly on the straw. Big Tony keeps things.";
+const ROOM_TYPE = { elevator: "MARBLE", foyer: "MARBLE", trophy: "MARBLE", dining: "MARBLE", landing: "MARBLE", gallery: "MARBLE", office: "MARBLE",
+  salon: "GLASS", atrium: "GLASS", aviary: "GLASS", terrace: "OPEN", enclosure: "OPEN" };
+const inType = t => ({ any: Object.keys(ROOM_TYPE).filter(r => ROOM_TYPE[r] === t).map(r => ({ in: r })) });
+const ENDINGS = {
+  W1: Object.entries(W1.missing).map(([p, line]) => ({ if: { key: "!" + p }, text: `CLEAN GETAWAY\n\n${W1.a} ${line} ${W1.b}\n\nTHE END. Secrets recovered: 2/3.` })),
+  W2: [{ if: { key: "RAN" }, text: `CLEAN SWEEP\n\n${W2} One sprint, one good story, three secrets. Not bad for a bookstore man.\n\nTHE END. Secrets recovered: 3/3. Perfect run.` },
+    `CLEAN SWEEP\n\n${W2} You never ran once. You talked your way out of a kingpin's palace with a smile, a story, and a zoo's worth of alibis.\n\nTHE END. Secrets recovered: 3/3. Perfect run.`],
+  L1: [...Object.entries(L1_OPENERS).map(([k, line]) => ({ if: { key: "STRIKE3_BY=" + k }, text: opener(T.end.L1, "COVER BLOWN", line) })), T.end.L1],
+  L2: [...Object.entries(T.nando.caught).map(([k, line]) => ({ if: { key: "CAUGHT_BY=" + k }, text: opener(T.end.L2, "CAUGHT", line) })), T.end.L2],
+  L3: Object.entries(L3_BY_TYPE).flatMap(([type, first]) => {
+    const body = T.end.L3.replace(L3_FIRST, first);
+    return [{ if: { ...inType(type), key: "SECRETS>=1" }, text: body.replace("\n\nGAME OVER.", " " + L3_TAIL + "\n\nGAME OVER.") }, { if: inType(type), text: body }];
+  })
+};
+
 const G = {
   title: "THIS PLACE HAS A BIG FOOTPRINT",
   intro: T.intro,
@@ -579,7 +650,7 @@ const G = {
   fallback: T.fallback,
   messages: {   // messages add-on: the engine's own lines, reworded
     [T.fallback]: { rotate: T.huh },
-    "The game is over. Type 'menu' to return to the start menu.": T.over,
+    "The game is over. Type 'menu' to return to the start menu.": { rotate: T.overs },   // F3
     "Commands: *": T.help,
     "Exits: *": [{ if: ESC, text: "" }, "*"],   // ESCAPE: exits are named by landmark in the room text
     "You can't go that way.": "No way through there, detective.",   // ED-10
@@ -606,14 +677,18 @@ const G = {
     foyer: { name: "Grand Foyer", desc: desc("foyer"), ways: { stairs: "up", staircase: "up", staircases: "up" },                                                           // R2
       exits: exits("foyer", { south: "elevator", west: "trophy", east: "salon", north: "dining", up: "landing" }),
       on: merge(strikes(`thirteenth|13th|${STEP}`, "STEP"), { push: [
+        { if: { ...ESC, said: ["thirteenth|13th|13", "step|stair"], flag: "p3" }, add: { turns: -1 }, say: T.graded.stepDone },   // E2: free
         { if: { ...ESC, said: ["thirteenth|13th|13", "step|stair"], not: { flag: "p3" } }, ...secret("p3", "photos", T.p3.solved) },
+        ...GRADED_STEPS,   // E2
         { if: { ...ESC, said: `thirteenth|13th|${STEP}` }, say: T.p3.wrong, feedback: true } ] }) },
     trophy: { name: "Trophy Room", desc: desc("trophy"), exits: exits("trophy", { east: "foyer" }), on: strikes("rifle", "RIFLE") },   // R3
     salon: { name: "Music Salon", desc: desc("salon"), exits: exits("salon", { west: "foyer" }),                // R4
       on: merge(strikes("piano|lid|keys|keyboard|ivory|ivories", "PIANO"), { play: [
         { if: TOUR, ...STRIKE, note: { STRIKE3_BY: "PIANO" } },
         { if: { said: "cielito lindo", not: { flag: "p1" } }, ...secret("p1", "ledger", T.p1.solved) },
-        { if: { not: { flag: "p1" } }, say: T.p1.wrong, feedback: true },
+        { if: { not: { flag: "p1" }, only: "piano|keys|keyboard|lid|song|a|some|something|music|tune" }, say: T.p1.wrong, feedback: true },   // E2: no song
+        { if: { not: { flag: "p1" }, said: "mama's song|mamas song|mama song|her song|mother's song|mothers song|rosa's song|rosas song|mama rosa's song" }, say: T.graded.rightSong, feedback: true },
+        { if: { not: { flag: "p1" } }, rotate: T.graded.otherSong, feedback: true },   // any other title
         { add: { turns: -1 }, say: T.nudge.piano } ] }) },   // CP-03: solved, and free
     dining: { name: "Dining Hall", desc: desc("dining"), exits: exits("dining", { south: "foyer" }),             // R5
       on: { Say: [
@@ -626,8 +701,12 @@ const G = {
       on: merge(strikes(HIPPO, "HIPPO"), {
         drop: [{ if: { ...ESC, said: ["coin", "hippo|mouth|pepita|fountain"], has: "coin" }, take: "coin", ...secret("p2", "manifest", T.p2.solved) }],   // GDD 12.6
         use: [{ if: { ...ESC, said: "coin", has: "coin" }, take: "coin", ...secret("p2", "manifest", T.p2.solved) },
+          { if: { ...ESC, said: "coin", key: "COIN_DROPPED" }, add: { turns: -1 }, say: T.graded.noCoin },   // E2: no turn
+          { if: { ...ESC, said: ["card|briefing", HIPPO] }, say: T.graded.card, feedback: true },
+          { if: { ...ESC, said: ["ledger|manifest|photos|photo", HIPPO] }, say: T.item.evidence, feedback: true },
           { if: { ...ESC, said: HIPPO }, say: T.p2.wrong, feedback: true }],
-        ...Object.fromEntries(["Take", "touch", "open", "push"].map(v => [v, [{ if: { ...ESC, said: HIPPO }, say: T.p2.wrong, feedback: true }]])) }) },
+        ...Object.fromEntries(["Take", "touch"].map(v => [v, [{ if: { ...ESC, said: HIPPO }, say: T.p2.wrong, feedback: true }]])),
+        ...Object.fromEntries(["open", "push", "pull"].map(v => [v, [{ if: { ...ESC, said: HIPPO }, say: T.graded.shut, feedback: true }]])) }) },   // E2
     office: { name: "The Don's Office", desc: desc("office"), exits: exits("office", { west: "landing" }),       // R9
       on: { Say: [
         { if: { not: { flag: "q2" }, said: "dog eared page|dog eared" }, set: "q2", give: "coin", say: T.q2.right + " " + T.don.after2 },
@@ -698,7 +777,7 @@ const G = {
     bribe: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } }, { if: { here: "don" }, say: T.don.social.bribe }],
     flatter: [{ if: { here: "don" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] }, { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
     ...Object.fromEntries(["lie", "shake", "thank", "hug"].map(v => [v, [{ if: { here: "don" }, say: T.don.social[v] }]])),
-    run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: T.guard.run },
+    run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: [{ if: { in: "foyer" }, text: T.foyerGuard.run }, T.guard.run] },
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "RUN2" } },   // CP-01: a second run goes straight to CAUGHT, no confused line
       { add: { turns: -1 }, say: T.nudge.run }],   // BR-08: free outside a checkpoint
     Say: [alibi("peacocks", "peacock|peacocks"), alibi("giraffe", "giraffe|giraffes"), alibi("jaguar", "jaguar|jaguars"),   // QA-01: singular works too
@@ -707,12 +786,14 @@ const G = {
         { if: { flag: "checkpoint", said: `${a.replace(/s$/, "")}|${a}|${a.replace(/s$/, "")}s`, min: { [a]: 2 } }, note: { CAUGHT_BY: "USED" } }]),
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "OTHER" } }],   // CP-01
     open: [{ if: { ...TOUR, said: "gate|giraffe|jaguar" }, say: T.gateTour }],
-    hint: [
-      { if: { ...ESC, in: "salon", not: { flag: "p1" } }, say: T.p1.hint },
-      { if: { ...ESC, in: "atrium", not: { flag: "p2" } }, say: T.p2.hint },
-      { if: { ...ESC, in: "foyer", not: { flag: "p3" } }, say: T.p3.hint },
-      { if: ESC, say: T.hint.escape },
-      { say: T.hint.tour } ],
+    hint: [   // Script E1: each ladder keeps its own place (nouns add-on's ladder effect)
+      { if: { flag: "checkpoint" }, ladder: T.ladder.checkpoint },
+      { if: { any: [{ in: "dining", not: { flag: "q1" } }, { in: "office", not: { flag: "q2" } }] }, ladder: T.ladder.question },
+      { if: { ...ESC, in: "salon", not: { flag: "p1" } }, ladder: T.ladder.P1 },
+      { if: { ...ESC, in: "atrium", not: { flag: "p2" } }, ladder: T.ladder.P2 },
+      { if: { ...ESC, in: "foyer", not: { flag: "p3" } }, ladder: T.ladder.P3 },
+      { if: ESC, ladder: T.ladder.escape },
+      { ladder: T.ladder.tour } ],
     status: [
       { if: TOUR, say: T.statusTour },
       { line: ["Bigfoot clock: {clock} turns. Secrets: {secrets}/3. Run: ", [{ if: { min: { ran: 1 } }, text: "used" }, "ready"],
@@ -720,10 +801,11 @@ const G = {
   },
 
   events: [
+    { add: { examined: 0 } },   // declared here; the nouns add-on counts first looks into it for the run report
     // endings first: once one fires, nothing after it runs
-    { if: { min: { strikes: 3 } }, end: T.end.L1 + T.retry },
-    { if: { flag: "won", min: { secrets: 3 } }, end: T.end.W2 },
-    { if: { flag: "won" }, end: T.end.W1 },
+    { if: { min: { strikes: 3 } }, note: { ENDING: "L1" }, end: ENDINGS.L1 },
+    { if: { flag: "won", min: { secrets: 3 } }, note: { ENDING: "W2" }, end: ENDINGS.W2 },
+    { if: { flag: "won" }, note: { ENDING: "W1" }, end: ENDINGS.W1 },
     // tour: arriving at each stop moves the Don along and plays his line
     ...LEGS.map(([, , to], k) => ({ if: { in: to, min: { leg: k }, max: { leg: k } }, add: { leg: 1 }, move: { don: to },
       ...(to === "foyer" && k > 0 && { say: [{ if: { key: "STRIKES=2" }, text: T.don.pass.cold }, T.don.pass[k / 2 + 1]] }),   // PASS(2)-PASS(4)
@@ -731,9 +813,8 @@ const G = {
     // ESCAPE begins on entering R11: the Don flees, the Bigfoot clock starts at 18
     { if: { in: "terrace" }, set: "escape", move: { don: null }, add: { clock: 18 }, mark: "tick" },
     { repeat: true, if: { ...ESC, since: { tick: 1 } }, mark: "tick", add: { clock: -1 } },   // every turn-costing command
-    { if: { flag: "checkpoint", since: { stop: 1 } }, end: [...Object.keys(T.nando.caught).map(k => ({ if: { key: "CAUGHT_BY=" + k },
-      text: T.end.L2.replace("CAUGHT\n\n", "CAUGHT\n\n" + T.nando.caught[k] + "\n\n") + T.retry })), T.end.L2 + T.retry] },
-    { if: { ...ESC, max: { clock: 0 } }, end: T.end.L3 + T.retry },
+    { if: { flag: "checkpoint", since: { stop: 1 } }, note: { ENDING: "L2" }, end: ENDINGS.L2 },
+    { if: { ...ESC, max: { clock: 0 } }, note: { ENDING: "L3" }, end: ENDINGS.L3 },
     { if: { ...ESC, max: { clock: 6 } }, say: T.clock[6] },
     { if: { ...ESC, max: { clock: 3 } }, say: T.clock[3] },
     { if: { ...ESC, max: { clock: 1 } }, say: T.clock[1] },
@@ -954,6 +1035,32 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
     topic("saint|portraits|paintings", "\"Every family needs a saint. Mine is me. It saves time.\"", "\"Keep walking.\""),
     topic("animals|zoo", "\"Some men buy boats. I bought a family that bites.\"", "\"They're fed. Mostly.\"")
   ] } };
+
+// ---- Script F2: the run report, printed inside every ending's block (nouns add-on); F3 is in messages
+G.firstLook = T.close;   // E3: secret close-ups
+const ENDED = e => ({ noted: { ENDING: e } });
+const TEASE = [   // first that applies
+  [ENDED("L1"), "The tour is the map. The Don told you everything you'd need."],
+  [ENDED("L2"), "A guard wants a reason. Loose animals make good reasons."],
+  [ENDED("L3"), "Big Tony is the clock. Plan the walk back before you start it."],
+  [{ ...ENDED("W1"), key: "!P1" }, "One secret stayed home. Mama would know where."],
+  [{ ...ENDED("W1"), key: "!P2" }, "One secret stayed home. Pepita has expensive taste."],
+  [{ ...ENDED("W1"), key: "!P3" }, "One secret stayed home. Count the steps."]];
+G.report = {
+  counted: ["card", "coin", "ledger", "manifest", "photos", "don", "nando"],   // Y = Script section A nouns + items + NPCs
+  lines: [
+    ["RUN REPORT"],
+    ["Secrets: {secrets} of 3 (", { list: [[{ if: { flag: "p1" }, text: "ledger" }], [{ if: { flag: "p2" }, text: "manifest" }], [{ if: { flag: "p3" }, text: "photos" }]], none: "none" }, ")"],
+    [[{ if: { any: [ENDED("W1"), ENDED("W2"), ENDED("L2")] }, text: "Turns to spare: {clock}" }]],
+    ["Strikes: {strikes} of 3"],
+    ["Alibis used: ", { list: [[{ if: { key: "USED_PEACOCKS" }, text: "peacocks" }], [{ if: { key: "USED_GIRAFFE" }, text: "giraffe" }], [{ if: { key: "USED_JAGUAR" }, text: "jaguar" }]], none: "none" },
+      ". Run: ", [{ if: { key: "RAN" }, text: "used" }, "not used"], "."],
+    ["Things examined: {examined} of {examinable}"],
+    [[...TEASE.map(([c, text]) => ({ if: c, text })),
+      { if: { ...ENDED("W2"), max: { examined: Object.keys(NOUNS).length + 6 } }, text: "Every secret. Not every corner. There's more to see in this house." },
+      { if: ENDED("W2"), text: "Every secret, every corner. The Don never stood a chance." }, ""]]],
+  after: [{ if: { any: [ENDED("L1"), ENDED("L2"), ENDED("L3")] }, text: T.retry }, ""]
+};
 </script>
 
 <script>
@@ -1229,6 +1336,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "a|b" = either one; a list = every one of them; "" = nothing was typed. Hyphens count as spaces, and
                 for go a direction is spelled out ("d" is "down").
               any:[COND, ...]  at least one of them passes
+              only:"a|b c"  every word typed after the verb is one of these words (or nothing was typed)
    "look <thing>" examines it ("look around" still looks); "look under/behind/in <thing>"
    searches it; "pick up <thing>" takes it; "climb <stairs word or direction>" walks. The echo of what the
    player typed never turns [id] into a name.
@@ -1263,7 +1371,8 @@ document.addEventListener("DOMContentLoaded", () => {
     commands, aliases: ALIASES, free: G.free,
     conditions: {
       said: p => [].concat(p).every(q => q === "" ? !said.trim() : q.split("|").some(w => said.includes(norm(w)))),
-      any: l => l.some(c => test(c))
+      any: l => l.some(c => test(c)),
+      only: p => said.trim().split(" ").every(w => !w || p.split("|").some(x => norm(x).trim().split(" ").includes(w)))
     },
     effects: { line: v => print(v.map(part).join("")) },
     before(v, a) {
@@ -1320,7 +1429,13 @@ document.addEventListener("DOMContentLoaded", () => {
             turn and no earlier add-on answered does nothing but note CAUGHT_BY = by(...)
           topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
                            coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
+          firstLook: { id: TEXT }   replaces the examine text the first time id is examined
+          report: { lines: [[part, ...], ...], after: TEXT, counted: [ids] }   printed inside every
+            ending's text block, after it: a part is TEXT or { list:[TEXT, ...], none:TEXT }; a
+            line that comes out empty is skipped. {examined} / {examinable} count the first looks
+            at nouns and the counted ids, out of all of them.
    Effects: rotate:[TEXT, ...] prints the next line of that list, in turn.
+            ladder:[TEXT, ...] prints the next line, then stays on the last (hint ladders).
             note:{ name: value } remembers a value; condition noted:{ name: value } tests it.
             feedback:true (see above).
    Matching: the longest phrase typed wins. A room noun beats an "any" noun and an item
@@ -1372,6 +1487,17 @@ document.addEventListener("DOMContentLoaded", () => {
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
     ...(G.strikeVerbs || [])].filter(v => !["at", "cat", "words", "strike", "puzzle", "examine", "*", "handle", "feed"].includes(v)));
   // rotations, notes, first looks: saved in S.nouns
+  const ladder = L => { const k = "ladder:" + JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[Math.min(n, L.length - 1)]; };
+  // the run report goes inside the ending's block (G.report)
+  const COUNTED = [...Object.keys(N), ...(G.report?.counted || [])];
+  const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
+  const end0 = EFFECT.end;
+  EFFECT.end = v => {
+    if (!G.report) return end0(v);
+    S.count.examined = S.nouns.seen.filter(id => COUNTED.includes(id)).length; S.count.examinable = COUNTED.length;
+    const rep = G.report.lines.map(l => l.map(part).join("")).filter(Boolean).join("\n");
+    end0([{ text: txt(v) + "\n\n" + rep + txt(G.report.after || "") }]);
+  };
   const rotate = L => { const k = JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[n % L.length]; };
   let pending = false;
   const feedback = () => { if (G.feedback && key("ESCAPE") && !FREE.includes(verb)) print(txt(rotate(G.feedback))); };
@@ -1436,11 +1562,12 @@ document.addEventListener("DOMContentLoaded", () => {
         S.nouns.notes.STRIKE3_BY = thing(target).strike;   // what caused it (for the L1 opener)
         run(G.strike); if (tourFree()) refund(); return true; }
     }
-    if (h.kind !== "noun" && v === "examine") return react(h.id), undefined;   // items and NPCs: the engine's own lines
+    if (h.kind !== "noun" && v === "examine") {   // items and NPCs: the engine's own lines (or a first-look close-up)
+      const close = G.firstLook?.[h.id] && !S.nouns.seen.includes(h.id);
+      react(h.id); return close ? (print(txt(G.firstLook[h.id])), true) : undefined; }
     if (h.kind !== "noun" && !own.has(v) && v !== "go") return;
     if (h.kind === "noun") noun = t;
-    if (v === "examine") { if (h.kind !== "noun") return react(h.id), undefined;
-      say(pick(t.examine)); react(h.id); return true; }
+    if (v === "examine") { say(pick(t.examine)); react(h.id); return true; }
     const vv = v === "go" ? "enter" : v;
     const mineLine = h.kind === "noun" && (lines(t, vv, a) || (v === "go" && lines(t, "go", a)));
     if (mineLine) return say(mineLine);
@@ -1454,7 +1581,7 @@ document.addEventListener("DOMContentLoaded", () => {
     commands,
     state: { turn: {}, notes: {}, seen: [], once: [] },
     conditions: { key: v => key(v), noted: o => Object.entries(o).every(([k, v]) => S.nouns.notes[k] === v) },
-    effects: { rotate: L => print(txt(rotate(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
+    effects: { rotate: L => print(txt(rotate(L))), ladder: L => print(txt(ladder(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
     before(v, a) {
       // a checkpoint: anything that costs a turn and reached here fails it. Note why, and let CAUGHT say it
       if (G.caught && test(G.caught.if) && !FREE.includes(v)) return (S.nouns.notes.CAUGHT_BY ??= G.caught.by(v, a)), true;

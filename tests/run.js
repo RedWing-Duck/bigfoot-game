@@ -446,3 +446,93 @@ test("Polish B: clock bands and turn feedback never repeat back to back; bands f
   g.run("S.count.clock = 3"); g.type("look");
   assert.ok(g.lines().slice(-4).some(l => ["Footsteps on the stairs below, and every step shakes the roof.", "A shadow on the terrace that isn't yours. It moves when you don't."].includes(l)), "BAND_C on the roof");
 });
+
+// ---- Polish C: feel (one test per ending variant, plus the run report)
+const play = (...cmds) => { const g = bigfoot(); g.type(...cmds); return g; };
+const report = g => Object.fromEntries(g.last().split("RUN REPORT\n")[1].split("\n").filter(l => l.includes(": ")).map(l => l.split(/: (.*)/s).slice(0, 2)));
+const BASE = ["open giraffe gate", "s", "s", "use gold coin on hippo", "s", "run", "e", "d", "say giraffe", "push thirteenth step"];
+
+test("Polish C: W1 names the secret left behind; the run report matches the run", () => {
+  const noLedger = play(...TOUR, ...BASE, "s", "d");
+  assert.match(noLedger.last(), /a notebook full of rubber bands keeps its secrets[\s\S]*THE END\. Secrets recovered: 2\/3\.\n\nRUN REPORT/);
+  const r = report(noLedger);
+  assert.equal(r.Secrets, "2 of 3 (manifest, photos)");
+  assert.equal(r["Turns to spare"], String(noLedger.get("S.count.clock")));
+  assert.equal(r.Strikes, "0 of 3");
+  assert.equal(r["Alibis used"], "giraffe. Run: used.");
+  assert.match(noLedger.last(), /One secret stayed home\. Mama would know where\.$/);
+  const noManifest = play(...TOUR, "open giraffe gate", "s", "s", "s", "run", "e", "d", "say giraffe", "push thirteenth step", "e", "play cielito lindo", "w", "s", "d");
+  assert.match(noManifest.last(), /Pepita is still sitting on a shipping schedule/);
+  assert.match(noManifest.last(), /Pepita has expensive taste\.$/);
+  const noPhotos = play(...TOUR, "s", "open aviary", "s", "use coin on hippo", "s", "say peacock", "e", "d", "run", "e", "play cielito lindo", "w", "s", "d");
+  assert.match(noPhotos.last(), /the thirteenth step is still keeping the Don's best pictures/);
+  assert.match(noPhotos.last(), /Count the steps\.$/);
+});
+
+test("Polish C: W2 with and without the run; things examined counts first looks", () => {
+  const ran = play(...TOUR, ...BASE, "e", "play cielito lindo", "w", "s", "d");
+  assert.match(ran.last(), /One sprint, one good story, three secrets/);
+  const talker = play(...TOUR, "open giraffe gate", "s", "open aviary", "s", "use coin on hippo", "x manifest", "x hippo", "x hippo", "s", "say peacocks",
+    "e", "d", "say giraffe", "push thirteenth step", "e", "play cielito lindo", "w", "s", "d");
+  assert.match(talker.last(), /You never ran once/);
+  const r = report(talker), [x, y] = r["Things examined"].split(" of ").map(Number);
+  assert.equal(x, 2, "manifest and hippo, each counted once");
+  assert.equal(y, Object.keys(talker.get("G.nouns")).length + 7);
+  assert.match(talker.last(), /Every secret\. Not every corner\./);
+});
+
+test("Polish C: L1 opens with what caused the third strike (STRIKE3_BY)", () => {
+  const cases = {
+    RIFLE: [["n", "w", "take rifle", "touch rifle", "pull rifle"], /The rifle, Walter\? In my house\?/],
+    PIANO: [["n", "w", "e", "e", "touch piano", "push piano", "play piano"], /Nobody touches Mama's piano/],
+    STEP: [["n", "touch thirteenth step", "push thirteenth step", "pull thirteenth step"], /You were listening\. Too well\./],
+    HIPPO: [[...TOUR.slice(0, 14), "touch hippo", "push hippo", "pull hippo"], /You put your hands on my Pepita\?/],
+    Q1: [["n", "w", "e", "e", "w", "n", "say pozole", "say gravy", "say neither"], /Choose between my mother and my nonna/],
+    Q2: [[...TOUR.slice(0, 10), "say books", "say more books", "say the book place"], /You don't know the name of your own bookstore/] };
+  for (const [k, [cmds, opener]] of Object.entries(cases)) {
+    const g = play(...cmds);
+    assert.match(g.last(), /^COVER BLOWN\n\n/, k); assert.match(g.last(), opener, k);
+    assert.match(g.last(), /Strikes: 3 of 3/, k);
+    assert.match(g.last(), /RESTART to try again, or QUIT to walk away\.$/, k);
+  }
+});
+
+test("Polish C: L3's first line follows the room type; the tail needs a secret", () => {
+  const open = play(...TOUR, ...Array(18).fill("dance"));
+  assert.match(open.last(), /^BIG FOOTPRINT\n\nThe rain stops hitting you\./);
+  assert.doesNotMatch(open.last(), /Big Tony keeps things/);
+  const glass = play(...TOUR, "s", "s", "use coin on hippo", ...Array(15).fill("dance"));
+  assert.match(glass.last(), /^BIG FOOTPRINT\n\nEvery pane in the room goes dark at once\./);
+  assert.match(glass.last(), /Big Tony keeps things\.\n\nGAME OVER\./);
+  assert.match(glass.last(), /Secrets: 1 of 3 \(manifest\)/);
+  const marble = play(...TOUR, "s", "s", "s", "run", ...Array(14).fill("dance"));
+  assert.match(marble.last(), /^BIG FOOTPRINT\n\nA shadow the size of a delivery truck fills the doorway\./);
+  assert.doesNotMatch(marble.last(), /Turns to spare/, "only W1, W2 and L2 report turns to spare");
+});
+
+test("Polish C: hint ladders keep their own places; close-ups show once; after the ending lines rotate", () => {
+  const g = play(...TOUR, "hint", "hint", "s", "s", "hint", "n", "hint");
+  const h = g.lines().filter((l, i, a) => a[i - 1] === "> hint");
+  assert.deepEqual(h, ["Walk the tour backward. Grab what you can.", "The guards chase animals first.", "Pepita has a price.",
+    "The gates are on the roof and the aviary is right below it. Open one before you meet a guard. Two secrets gets you out."]);
+  g.type("s", "use coin on hippo", "x manifest");
+  assert.match(g.last(), /^Dates, ports, container numbers/);
+  g.type("x manifest");
+  assert.match(g.last(), /^A waterproof tube/);
+  const e = play(...TOUR, ...Array(18).fill("dance"), "look", "look", "look", "look");
+  assert.deepEqual(e.lines().slice(-8).filter(l => !l.startsWith(">")), ["The story's over, detective. RESTART or QUIT.",
+    "The Don's house is quiet now. RESTART or QUIT.", "Case closed. RESTART to reopen it, or QUIT.", "The story's over, detective. RESTART or QUIT."]);
+});
+
+test("Polish C: graded wrong attempts (E2) and alibi lines by checkpoint (E4)", () => {
+  const g = play(...TOUR, "open giraffe gate", "s", "s", "s", "run", "e", "d", "say giraffe");
+  assert.match(g.last(), /You just point up\. The giraffe's head hangs over the banister/, "R2 alibi line");
+  g.type("push fifth step");
+  assert.ok(g.lines().includes("That's step 5. It's just a step. Keep counting."));
+  g.type("push 13th step", "push 13th step");
+  assert.equal(g.last(), "It's already down. The panel is already open.");
+  g.type("e", "play mama's song");
+  assert.ok(g.lines().includes("Right song. Wrong words. What was it called? She sang it every Sunday."));
+  const p = play(...TOUR, "s", "open aviary", "s", "s", "say peacocks");
+  assert.match(p.last(), /As if on cue, a scream echoes down the hall/, "R7 alibi line");
+});

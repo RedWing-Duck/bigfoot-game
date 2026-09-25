@@ -16,6 +16,7 @@
                 "a|b" = either one; a list = every one of them; "" = nothing was typed. Hyphens count as spaces, and
                 for go a direction is spelled out ("d" is "down").
               any:[COND, ...]  at least one of them passes
+              only:"a|b c"  every word typed after the verb is one of these words (or nothing was typed)
    "look <thing>" examines it ("look around" still looks); "look under/behind/in <thing>"
    searches it; "pick up <thing>" takes it; "climb <stairs word or direction>" walks. The echo of what the
    player typed never turns [id] into a name.
@@ -50,7 +51,8 @@
     commands, aliases: ALIASES, free: G.free,
     conditions: {
       said: p => [].concat(p).every(q => q === "" ? !said.trim() : q.split("|").some(w => said.includes(norm(w)))),
-      any: l => l.some(c => test(c))
+      any: l => l.some(c => test(c)),
+      only: p => said.trim().split(" ").every(w => !w || p.split("|").some(x => norm(x).trim().split(" ").includes(w)))
     },
     effects: { line: v => print(v.map(part).join("")) },
     before(v, a) {

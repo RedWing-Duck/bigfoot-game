@@ -33,7 +33,13 @@
             turn and no earlier add-on answered does nothing but note CAUGHT_BY = by(...)
           topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
                            coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
+          firstLook: { id: TEXT }   replaces the examine text the first time id is examined
+          report: { lines: [[part, ...], ...], after: TEXT, counted: [ids] }   printed inside every
+            ending's text block, after it: a part is TEXT or { list:[TEXT, ...], none:TEXT }; a
+            line that comes out empty is skipped. {examined} / {examinable} count the first looks
+            at nouns and the counted ids, out of all of them.
    Effects: rotate:[TEXT, ...] prints the next line of that list, in turn.
+            ladder:[TEXT, ...] prints the next line, then stays on the last (hint ladders).
             note:{ name: value } remembers a value; condition noted:{ name: value } tests it.
             feedback:true (see above).
    Matching: the longest phrase typed wins. A room noun beats an "any" noun and an item
@@ -85,6 +91,17 @@
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
     ...(G.strikeVerbs || [])].filter(v => !["at", "cat", "words", "strike", "puzzle", "examine", "*", "handle", "feed"].includes(v)));
   // rotations, notes, first looks: saved in S.nouns
+  const ladder = L => { const k = "ladder:" + JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[Math.min(n, L.length - 1)]; };
+  // the run report goes inside the ending's block (G.report)
+  const COUNTED = [...Object.keys(N), ...(G.report?.counted || [])];
+  const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
+  const end0 = EFFECT.end;
+  EFFECT.end = v => {
+    if (!G.report) return end0(v);
+    S.count.examined = S.nouns.seen.filter(id => COUNTED.includes(id)).length; S.count.examinable = COUNTED.length;
+    const rep = G.report.lines.map(l => l.map(part).join("")).filter(Boolean).join("\n");
+    end0([{ text: txt(v) + "\n\n" + rep + txt(G.report.after || "") }]);
+  };
   const rotate = L => { const k = JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[n % L.length]; };
   let pending = false;
   const feedback = () => { if (G.feedback && key("ESCAPE") && !FREE.includes(verb)) print(txt(rotate(G.feedback))); };
@@ -149,11 +166,12 @@
         S.nouns.notes.STRIKE3_BY = thing(target).strike;   // what caused it (for the L1 opener)
         run(G.strike); if (tourFree()) refund(); return true; }
     }
-    if (h.kind !== "noun" && v === "examine") return react(h.id), undefined;   // items and NPCs: the engine's own lines
+    if (h.kind !== "noun" && v === "examine") {   // items and NPCs: the engine's own lines (or a first-look close-up)
+      const close = G.firstLook?.[h.id] && !S.nouns.seen.includes(h.id);
+      react(h.id); return close ? (print(txt(G.firstLook[h.id])), true) : undefined; }
     if (h.kind !== "noun" && !own.has(v) && v !== "go") return;
     if (h.kind === "noun") noun = t;
-    if (v === "examine") { if (h.kind !== "noun") return react(h.id), undefined;
-      say(pick(t.examine)); react(h.id); return true; }
+    if (v === "examine") { say(pick(t.examine)); react(h.id); return true; }
     const vv = v === "go" ? "enter" : v;
     const mineLine = h.kind === "noun" && (lines(t, vv, a) || (v === "go" && lines(t, "go", a)));
     if (mineLine) return say(mineLine);
@@ -167,7 +185,7 @@
     commands,
     state: { turn: {}, notes: {}, seen: [], once: [] },
     conditions: { key: v => key(v), noted: o => Object.entries(o).every(([k, v]) => S.nouns.notes[k] === v) },
-    effects: { rotate: L => print(txt(rotate(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
+    effects: { rotate: L => print(txt(rotate(L))), ladder: L => print(txt(ladder(L))), note: o => Object.assign(S.nouns.notes, o), feedback: () => { pending = true; } },
     before(v, a) {
       // a checkpoint: anything that costs a turn and reached here fails it. Note why, and let CAUGHT say it
       if (G.caught && test(G.caught.if) && !FREE.includes(v)) return (S.nouns.notes.CAUGHT_BY ??= G.caught.by(v, a)), true;
