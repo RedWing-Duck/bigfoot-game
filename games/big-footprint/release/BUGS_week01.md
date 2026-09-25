@@ -71,4 +71,8 @@ Root cause for the suite: the extended coverage test now tries every info and Ti
 | NB-02 | P2 | Small talk at Q1 cost a strike | Fixed | Only a "say" with an answer word counts; anything else gets QA's redirect line, no strike |
 | NB-03 | P2 | Roleplayed alibis didn't work | Fixed | shout, yell, scream, holler = say; "tell nando <text>" at a checkpoint = say <text> (a bare "tell nando" still repeats, free) |
 | NB-04 | P2 | Meta commands got the confused line | Fixed | where (am i), exits / directions / ways out, map, what now / stuck / help me, save / load / undo / restore, back / go back / return, all free, with QA's lines; "go back" at a checkpoint stays a move |
-| NB-05 to NB-09 | P3 | | Open | Next round |
+| NB-05 | P3 | "say <words>" with no question pending got the confused line | Fixed | With the Don here: his talk line, or the topic the words name; with nobody here: QA's line (free) |
+| NB-06 | P3 | Q1 and Q2 shared a hint ladder | Fixed | Separate ladders; each keeps its own place (a ladder's place is now keyed by its whole list) |
+| NB-07 | P3 | "push 13" / "push thirteen" found nothing | Fixed | "13" and "thirteen" name the step and solve P3 |
+| NB-08 | P3 | "X and Y" silently dropped Y | Fixed | Does X, then "One thing at a time, detective." (not for say / tell / ask, where "and" is part of what's said) |
+| NB-09 | P3 | "tell don i love the marble" got the unknown-topic line | Fixed | Compliment words = the flatter line; new house / marble / palace topic (QA text) |

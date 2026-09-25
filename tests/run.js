@@ -657,3 +657,23 @@ test("Playtest round 2 P2s: NB-01 to NB-04", () => {
   const e = toEscape(); e.type("back");
   assert.equal(e.last(), "Back which way? Name a direction, or a landmark.", "NB-04 back (escape)");
 });
+
+test("Playtest round 2 P3s: NB-05 to NB-09", () => {
+  const g = play("n", "say hello, don chava");
+  assert.equal(g.last(), "\"Look around, Walter. Every stone in this floor, I earned.\"", "NB-05: say = talk with the Don here");
+  g.type("tell don i love the marble");
+  assert.equal(g.last(), "\"Tell me something I don't know.\" He's delighted.", "NB-09");
+  g.type("ask don about the palace");
+  assert.equal(g.last(), "\"Every stone, I picked. Every stone, I paid for. Mostly.\"", "NB-09 topic");
+  const n = toEscape(); n.type("say hello?");
+  assert.equal(n.last(), "You say it out loud. The house doesn't answer.", "NB-05: nobody here");
+  const h = play("n", "w", "e", "e", "w", "n", "hint", "hint", "hint", "say both", "s", "u", "e", "hint");
+  assert.equal(h.last(), "He's asking you something. Answer with \"say\".", "NB-06: Q2's ladder starts at step 1");
+  const p = toEscape(); p.type("open giraffe gate", "s", "s", "use coin on hippo", "s", "run", "e", "d", "say giraffe", "push 13");
+  assert.equal(p.get("S.loc.photos"), "player", "NB-07");
+  const a = toEscape(); a.type("open giraffe gate and jaguar gate");
+  assert.equal(a.last(), "One thing at a time, detective.", "NB-08");
+  assert.deepEqual([a.get("S.count.giraffe"), a.get("S.count.jaguar || 0")], [1, 0]);
+  const q = play("n", "w", "e", "e", "w", "n", "say pozole and gravy");
+  assert.equal(q.get("S.flags.q1"), true, "NB-08 doesn't split what's said out loud");
+});

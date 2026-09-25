@@ -209,9 +209,8 @@ const T = {
     P3: ["Two staircases. They aren't the same length.", "Business has one more step than family.", "Push the step the Don told you never to trust."],
     checkpoint: ["He wants a reason.", "An animal you let loose is a reason. So are fast legs, once.", "\"say\" the name of an animal you released, or \"run\" if you haven't yet."],
     tour: ["Listen to the Don. Every brag is a clue.", "Look at everything. Touch nothing. Examining is always safe.", "The tour is the map. On the way out, you'll walk it backward."],
-    question: ["He's asking you something. Answer with \"say\".",
-      [{ if: { in: "office" }, text: "It's written on your briefing card." }, "He told you about this house and family in the foyer."],
-      [{ if: { in: "office" }, text: "Read your card: the bookstore has a name." }, "In this house, you never choose."]],
+    q1: ["He's asking you something. Answer with \"say\".", "He told you about this house and family in the foyer.", "In this house, you never choose."],   // NB-06: own places
+    q2: ["He's asking you something. Answer with \"say\".", "It's written on your briefing card.", "Read your card: the bookstore has a name."],
     escape: ["Walk the tour backward. Grab what you can.", "The guards chase animals first.", "The gates are on the roof and the aviary is right below it. Open one before you meet a guard. Two secrets gets you out."] },
   graded: {   // E2
     rightSong: "Right song. Wrong words. What was it called? She sang it every Sunday.",
@@ -329,7 +328,7 @@ const NOUNS = {
       examine: [["TOUR", "Christenings, weddings, a quinceañera, a baby in a tiny tuxedo. In every one, the Don is either handing someone an envelope or holding someone's baby."], ["ESCAPE", "One frame has fallen and cracked straight across a wedding. Someone is going to hear about that."]] },
     "R2.rightstairs": { at: "foyer", cat: "FIXTURE", strike: "STEP", words: ["right staircase", "right stairs", "right side", "business stairs", "business side", "business staircase", "narrow stairs", "thirteen steps"],
       examine: [["TOUR", "Narrower, bare marble, polished to a shine, and no frames on the wall at all. Business doesn't keep pictures. Thirteen steps."], ["ESCAPE", "Thirteen steps, and one of them is wrong. Standing close, you can see it: the thirteenth sits a hair proud of the rest, with a thin dark seam around its edge."], ["P3", "The panel under the thirteenth step hangs open, breathing cold air up at you."]] },
-    "R2.step": { at: "foyer", cat: "PUZZLE", strike: "STEP", puzzle: "P3", words: ["thirteenth step", "13th step", "step thirteen", "step 13", "thirteenth", "top step"],
+    "R2.step": { at: "foyer", cat: "PUZZLE", strike: "STEP", puzzle: "P3", words: ["thirteenth step", "13th step", "step thirteen", "step 13", "thirteenth", "top step", "13", "thirteen"],   // + NB-07
       examine: [["TOUR", "Thirteen up the business side. It looks like every other step, except the shine on it is worn in a small ring, as if someone steps on it more carefully than the rest. The Don is watching your eyes."], ["ESCAPE", "A hair taller than its neighbors, with a seam you'd never notice unless you were looking. The shine is worn in a ring right in the center, right where a thumb would press."], ["P3", "Pressed flat now. The panel beside it hangs open."]],
       search: [["TOUR", "Your hand drifts toward it. The Don clears his throat. \"Admire, Walter. Don't touch.\""], ["ESCAPE", "You run your fingers around the seam. It moves, just barely. It's waiting for a firm push."]] },
     "R2.panel": { at: "foyer", cat: "FIXTURE", words: ["panel", "passage", "hidden door", "hidden passage", "crawlspace", "opening", "hatch", "cold air", "air", "tunnel"],
@@ -653,8 +652,8 @@ const G = {
     foyer: { name: "Grand Foyer", desc: desc("foyer"), ways: { stairs: "up", staircase: "up", staircases: "up" },                                                           // R2
       exits: exits("foyer", { south: "elevator", west: "trophy", east: "salon", north: "dining", up: "landing" }),
       on: merge(strikes(`thirteenth|13th|${STEP}`, "STEP"), { push: [
-        { if: { ...ESC, said: ["thirteenth|13th|13", "step|stair"], flag: "p3" }, add: { turns: -1 }, say: T.graded.stepDone },   // E2: free
-        { if: { ...ESC, said: ["thirteenth|13th|13", "step|stair"], not: { flag: "p3" } }, ...secret("p3", "photos", T.p3.solved) },
+        { if: { ...ESC, said: "thirteenth|13th|13|thirteen", flag: "p3" }, add: { turns: -1 }, say: T.graded.stepDone },   // E2: free
+        { if: { ...ESC, said: "thirteenth|13th|13|thirteen", not: { flag: "p3" } }, ...secret("p3", "photos", T.p3.solved) },
         ...GRADED_STEPS,   // E2
         { if: { ...ESC, said: `thirteenth|13th|${STEP}` }, say: T.p3.wrong, feedback: true } ] }) },
     trophy: { name: "Trophy Room", desc: desc("trophy"), exits: exits("trophy", { east: "foyer" }), on: strikes("rifle", "RIFLE") },   // R3
@@ -748,17 +747,21 @@ const G = {
       { if: { said: "nando|guard", min: { cleared: 1 }, not: { here: "nando" } }, say: T.nando.after }],
     ask: [{ if: { flag: "checkpoint" }, add: { turns: -1 }, rotate: T.nando.repeat }],   // D3
     tell: [{ if: { flag: "checkpoint", only: "nando|guard|about|him" }, add: { turns: -1 }, rotate: T.nando.repeat },   // NB-03: "tell nando <text>" = say <text>
-      ...CHECKPOINT_SAY],
+      ...CHECKPOINT_SAY,
+      { if: { here: "don", said: "love|like|beautiful|amazing|great|nice" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] },   // NB-09
+        { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
     bribe: [{ if: { flag: "checkpoint" }, note: { CAUGHT_BY: "ITEM" } }, { if: { here: "don" }, say: T.don.social.bribe }],
     flatter: [{ if: { here: "don" }, say: [{ if: { key: "STRIKES=2" }, text: T.don.social.flatter[2] }, { if: { key: "STRIKES=1" }, text: T.don.social.flatter[1] }, T.don.social.flatter[0]] }],
     ...Object.fromEntries(["lie", "shake", "thank", "hug"].map(v => [v, [{ if: { here: "don" }, say: T.don.social[v] }]])),
     run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: [{ if: { in: "foyer" }, text: T.foyerGuard.run }, T.guard.run] },
       { if: { flag: "checkpoint" }, note: { CAUGHT_BY: "RUN2" } },   // CP-01: a second run goes straight to CAUGHT, no confused line
       { add: { turns: -1 }, say: T.nudge.run }],   // BR-08: free outside a checkpoint
-    Say: CHECKPOINT_SAY,   // QA-01, D4, CP-01, NB-01
+    Say: [...CHECKPOINT_SAY,   // QA-01, D4, CP-01, NB-01
+      { if: { not: { here: "don" } }, add: { turns: -1 }, say: "You say it out loud. The house doesn't answer." }],   // NB-05 (QA text); with the Don: talk or a topic (nouns add-on)
     hint: [   // Script E1: each ladder keeps its own place (nouns add-on's ladder effect)
       { if: { flag: "checkpoint" }, ladder: T.ladder.checkpoint },
-      { if: { any: [{ in: "dining", not: { flag: "q1" } }, { in: "office", not: { flag: "q2" } }] }, ladder: T.ladder.question },
+      { if: { in: "dining", not: { flag: "q1" } }, ladder: T.ladder.q1 },
+      { if: { in: "office", not: { flag: "q2" } }, ladder: T.ladder.q2 },
       { if: { ...ESC, in: "salon", not: { flag: "p1" } }, ladder: T.ladder.P1 },
       { if: { ...ESC, in: "atrium", not: { flag: "p2" } }, ladder: T.ladder.P2 },
       { if: { ...ESC, in: "foyer", not: { flag: "p3" } }, ladder: T.ladder.P3 },
@@ -951,6 +954,8 @@ G.tails = {   // Script B [ROOM.Rn.tails]: ESCAPE, after the room text
   aviary: [{ key: "OUT_GIRAFFE", text: "Through the glass, a long neck glides past, heading somewhere it definitely isn't allowed." }],
   terrace: [{ key: "OUT_GIRAFFE&OUT_JAGUAR&OUT_PEACOCKS", text: "For one second the roof is quiet. Then the palace below you erupts.", once: true }]
 };
+G.oneAtATime = "One thing at a time, detective.";   // NB-08 (QA text)
+G.spoken = ["say", "tell", "ask"];
 G.extras = 2;   // PT-05: at most two extra lines after a room's text (Nando's greeting counts), in G.tails order, then the band
 G.npcLines = [T.nando.greet, T.nando.greet2, T.nando.greet2ran];
 G.warnings = [T.clock[6], T.clock[3], T.clock[1]];
@@ -1011,6 +1016,7 @@ G.topics = { don: {   // Script D2: ask / tell the Don about <topic>, on the tou
     topic("city|view|window", "\"Mine. Not on paper. But mine.\"", "\"Pretty, from up here.\""),
     topic("walter|you|me|pryce", "\"You? You're a bookstore man who sweats in elevators. I like you. Mostly.\"", "\"I'm still deciding about you.\""),
     topic("saint|portraits|paintings", "\"Every family needs a saint. Mine is me. It saves time.\"", "\"Keep walking.\""),
+    topic("house|marble|palace", "\"Every stone, I picked. Every stone, I paid for. Mostly.\"", "\"It's a house.\""),   // NB-09 (QA text)
     topic("animals|zoo", "\"Some men buy boats. I bought a family that bites.\"", "\"They're fed. Mostly.\"")
   ] } };
 

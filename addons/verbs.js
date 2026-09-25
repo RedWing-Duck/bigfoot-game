@@ -23,6 +23,8 @@
    Input: punctuation is dropped from typed words (letters, digits, hyphens and
           apostrophes stay), so "say giraffe!" and "north." work. List this add-on
           before any add-on that wraps act() (restart), so they see clean words too.
+          oneAtATime: TEXT, spoken: ["say", ...]   "X and Y" does X, then prints oneAtATime (not for
+            the spoken verbs, where "and" is part of what's said)
    Order: its replies answer before any add-on listed after it (nouns) gets a turn.
    Effect: line:[part, ...]   prints the parts joined together. A part is TEXT, or
              { list:[TEXT, ...], none:TEXT }: the non-empty ones joined with ", ", or none.
@@ -40,7 +42,13 @@
   const commands = {};
   for (const v of verbs) if (!CMDS[v]) commands[v] = () => print(txt(G.fallback || "You can't do that here."));   // before() answers first
   const act0 = act;   // clean the words; the echo line still shows what was typed
-  act = w => act0(w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x)));
+  act = w => {
+    w = w.map(x => x.replace(/[^\p{L}\p{N}'-]+/gu, " ")).join(" ").split(" ").filter(x => x && !FILLER.includes(x));
+    const and = w.indexOf("and"), v = ALIAS[w[0]] || w[0];
+    // "open the giraffe gate and the jaguar gate": the first one, then a nudge (not for words said out loud)
+    if (G.oneAtATime && and > 1 && and < w.length - 1 && !(G.spoken || []).includes(v)) { act0(w.slice(0, and)); return print(txt(G.oneAtATime)); }
+    act0(w);
+  };
   const plain = print;   // the echo stays literal: "[coin]" must not print the item's name
   print = (t, c) => plain(c === "cmd" && t.startsWith("> ") ? t.replace(/\[/g, "[\u200b") : t, c);
   const ALIASES = Object.fromEntries(Object.entries(G.aliases || {}).map(([w, c]) => [w.toLowerCase(), c]));

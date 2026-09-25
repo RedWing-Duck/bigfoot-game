@@ -34,6 +34,8 @@
           reactions: { id: TEXT }, reactIf: COND   printed after the FIRST look at id while reactIf passes
           caught: { if: COND, by: (verb, words) => value }   while "if" passes, a command that costs a
             turn and no earlier add-on answered does nothing but note CAUGHT_BY = by(...)
+          "say <words>" with no reply of its own: a topic if the words name one, else "talk <npc>",
+          for the NPC whose topics' "when" passes.
           topics: { npc: { when: COND, list: [{ words:[...], lines: LINES }], other: LINES,
                            coldKey, cold: [TEXT, ...] } }   "ask/tell <npc> about <topic>"
           firstLook: { id: TEXT }   replaces the examine text the first time id is examined
@@ -97,7 +99,7 @@
     ...Object.keys(ANY), ...Object.keys(ALONE), ...Object.values(RV).flatMap(Object.keys),
     ...(G.strikeVerbs || [])].filter(v => !["at", "cat", "words", "strike", "puzzle", "examine", "*", "handle", "feed"].includes(v)));
   // rotations, notes, first looks: saved in S.nouns
-  const ladder = L => { const k = "ladder:" + JSON.stringify(L[0]).slice(0, 60), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[Math.min(n, L.length - 1)]; };
+  const ladder = L => { const k = "ladder:" + JSON.stringify(L), n = S.nouns.turn[k] || 0; S.nouns.turn[k] = n + 1; return L[Math.min(n, L.length - 1)]; };
   // the run report goes inside the ending's block (G.report)
   const COUNTED = [...Object.keys(N), ...(G.report?.counted || [])];
   const part = p => p?.list ? p.list.map(txt).filter(Boolean).join(", ") || txt(p.none || "") : txt(p);
@@ -156,10 +158,16 @@
   };
   const commands = {};
   for (const v of own) if (!CMDS[v]) commands[v] = () => print("I don't understand that. Type 'help'.");
-  const mine = v => own.has(v) || v === "examine" || v === "go" || v === "wait";
+  const mine = v => own.has(v) || v === "examine" || v === "go" || v === "wait" || v === "say";
   function answer(v, a) {
     noun = null; verb = v;
     if ((v === "ask" || v === "tell") && ask(a)) return true;
+    if (v === "say") {   // no question or checkpoint answered it: a topic if it names one, else talk
+      for (const npc in G.topics || {}) { const P = G.topics[npc];
+        if (!test(P.when)) continue;
+        return P.list.some(t => t.words.some(w => has(a, w))) ? ask(a) : (exec("talk", npc), true); }
+      return;
+    }
     if (v === "wait") return key("ESCAPE") && say(pick(ANY.wait));
     if (!a) {   // the verb alone: this room's line, then the lone-verb line, then anywhere
       if (v === "examine" || v === "go") return;

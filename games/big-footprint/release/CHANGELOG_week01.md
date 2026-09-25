@@ -8,7 +8,12 @@ Credits: **Retroment Gaming.** Week 01 was a process check (a dry run), so there
   - Small talk at Q1 gets a redirect instead of a strike.
   - shout / yell / scream / holler and "tell nando <text>" give alibis.
   - Free meta commands: where, exits, map, what now, save, back.
-- **P3s:** NB-05 to NB-09, next round.
+- **P3s:** NB-05 to NB-09.
+  - `say` with no question pending talks to the Don (or answers a topic).
+  - Separate hint ladders for Q1 and Q2.
+  - "push 13" works.
+  - "X and Y" does X, then says "One thing at a time."
+  - Compliments to the Don get his flattery line, and there's a new house topic.
 
 ## Playtest fixes (polish build)
 - **P2s:** PT-01 to PT-06 (see `BUGS_week01.md`).
@@ -63,7 +68,7 @@ Depth only. The map, items, puzzles, solutions, win and lose rules and clock val
 
 ## Known issues
 - **P1/P2:** none known. The polish build hasn't had its QA passes yet (see `rev3/QA_FOCUS_week01_polish.pdf`).
-- **Tests:** 42 tests. All 18 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, and round 2's P2 check. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
+- **Tests:** 43 tests. All 19 polish tests pass: coverage (4,899 commands), the brief's spot checks, state, feel, the extended playtest coverage, the P2 and P3 checks, and round 2's P2 and P3 checks. 9 of the 24 rev 2 tests fail, by decision: the Script's new text replaces the exact wording they check. No rule, clock value or outcome changed.
 
   | rev 2 test | Text that changed |
   |---|---|
