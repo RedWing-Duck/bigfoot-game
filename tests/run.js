@@ -304,3 +304,10 @@ test("P3s: parser (BR-03/05/06/09/10/11), nudges (BR-08, CP-02/03), no confused 
   assert.match(g.lines().at(-1), /^CAUGHT/);
   assert.ok(!g.lines().at(-2).startsWith("You try that"), "CP-01");
 });
+
+test("QA-01: 'say peacock' (singular) is accepted at a checkpoint", () => {
+  const g = bigfoot();
+  g.type(...TOUR, "s", "open aviary", "s", "s", "say peacock");
+  assert.equal(g.get("S.over"), false);
+  assert.match(g.last(), /sprints toward the screaming/);
+});

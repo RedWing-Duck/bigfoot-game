@@ -244,7 +244,7 @@ const secret = (flag, item, text) => ({ set: flag, add: { secrets: 1 }, give: it
 
 // ---- Guard checkpoints (GDD 7): the next turn-costing command must be "run" or "say <released animal>"
 const CLEAR = { unset: "checkpoint", add: { cleared: 1 }, move: { nando: null } };
-const alibi = a => ({ if: { flag: "checkpoint", said: a, min: { [a]: 1 }, max: { [a]: 1 } }, ...CLEAR, add: { [a]: 1, cleared: 1 }, say: T.guard[a] });
+const alibi = (a, words = a) => ({ if: { flag: "checkpoint", said: words, min: { [a]: 1 }, max: { [a]: 1 } }, ...CLEAR, add: { [a]: 1, cleared: 1 }, say: T.guard[a] });
 const release = (a, words) => [{ if: { said: words, max: { [a]: 0 } }, add: { [a]: 1 }, say: T.alibi[a] }, { if: { said: words }, say: T.alibi.already }];
 const unused = (a, name) => [{ if: { min: { [a]: 1 }, max: { [a]: 1 } }, text: name }];
 
@@ -359,7 +359,8 @@ const G = {
     run: [{ if: { flag: "checkpoint", max: { ran: 0 } }, ...CLEAR, add: { ran: 1, cleared: 1 }, say: T.guard.run },
       { if: { flag: "checkpoint" } },   // CP-01: a second run goes straight to CAUGHT, no confused line
       { add: { turns: -1 }, say: T.nudge.run }],   // BR-08: free outside a checkpoint
-    Say: [alibi("peacocks"), alibi("giraffe"), alibi("jaguar"), { if: { flag: "checkpoint" } }],   // CP-01
+    Say: [alibi("peacocks", "peacock|peacocks"),   // QA-01: singular works too
+       alibi("giraffe"), alibi("jaguar"), { if: { flag: "checkpoint" } }],   // CP-01
     open: [{ if: { ...TOUR, said: "gate|giraffe|jaguar" }, say: T.gateTour }],
     hint: [
       { if: { ...ESC, in: "salon", not: { flag: "p1" } }, say: T.p1.hint },
